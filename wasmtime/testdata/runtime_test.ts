@@ -1,5 +1,10 @@
 // The entry file of your WebAssembly module.
 
+export declare namespace test {
+    function hello(ptr1: i32, ptr2: i32): i32
+    function log(s: string): void
+}
+
 const HEADER_LEN = 8
 const HEADER_RADIX = 16
 namespace helper {
@@ -23,27 +28,41 @@ namespace helper {
     }
 }
 
-export function allocate(size: u32): u32 {
-    return __alloc(size) as u32;
-}
+export function greet(ptr: i32): string {
+    let input = helper.unpackMsg(ptr);
+    test.log(input);
+    // TODO packmessage
+    let hinput = allocate(10);
+    test.log(hinput.toString());
+    memory.fill(hinput, 10, 1);
+    memory.fill(hinput + 1, 0, 1);
+    memory.fill(hinput + 2, 4, 1)
+    memory.fill(hinput + 3, 0, 3);
 
-export declare namespace test {
-    function hello(s: string): i32
-}
+    memory.fill(hinput + 6, 65, 1);
+    memory.fill(hinput + 7, 66, 1);
+    memory.fill(hinput + 8, 67, 1);
+    memory.fill(hinput + 9, 68, 1);
 
-// a lib function for user to call in aspect "OnTxReceived"
-function Hello(s: string): string {
-    // pack api arguments
-    let packedMsg = s.length.toString(HEADER_RADIX).padStart(HEADER_LEN, "0") + s;
+    let hinput2 = allocate(10);
+    test.log(hinput2.toString());
+    memory.fill(hinput2, 9, 1);
+    memory.fill(hinput2 + 1, 0, 1);
+    memory.fill(hinput2 + 2, 4, 1)
+    memory.fill(hinput2 + 3, 0, 3);
 
-    // call api
-    let ret = test.hello(packedMsg);
-    let raw = helper.unpackMsg(ret);
-    return raw;
-}
-
-export function test(ptr: i32): string {
+    memory.fill(hinput2 + 6, 97, 1);
+    memory.fill(hinput2 + 7, 98, 1);
+    memory.fill(hinput2 + 8, 99, 1);
+    memory.fill(hinput2 + 9, 100, 1);
+    let p = test.hello(hinput, hinput2);
+    // test.log(p.toString());
     let s = helper.unpackMsg(ptr);
-    let out = Hello(s);
-    return helper.packMsg(out);
+    test.log(s);
+    return "hello" + s;
+}
+
+
+export function allocate(size: i32): i32 {
+    return heap.alloc(size) as i32;
 }

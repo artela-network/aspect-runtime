@@ -58,6 +58,14 @@ func NewWASMTimeRuntime(code []byte, apis *runtime.HostAPICollection) (out runti
 		return nil, errors.Wrapf(err, "unable to link to abort")
 	}
 
+	// add abort function
+	log := wasmtime.WrapFunc(watvm.store, func(ptr int32) {
+		fmt.Println(string(watvm.memory.data[ptr : ptr+100]))
+	})
+	if err = watvm.linker.Define(watvm.store, "index", "test.log", log); err != nil {
+		return nil, errors.Wrapf(err, "unable to link to abort")
+	}
+
 	// instantiate module and store
 	if watvm.instance, err = watvm.linker.Instantiate(watvm.store, watvm.module); err != nil {
 		return nil, errors.Wrap(err, "unable to instantiate wasm module")
@@ -83,6 +91,14 @@ func NewWASMTimeRuntime(code []byte, apis *runtime.HostAPICollection) (out runti
 		},
 	}
 
+	runtime.NewMemory(
+		func() []byte {
+			return watvm.instance.GetExport(watvm.store, ExpNameMemory).Memory().UnsafeData(watvm.store)
+		},
+		func(size int32) (int32, error) {
+			return watvm.memory.allocate(size)
+		},
+	)
 	apis.SetArgHelper(watvm.memory)
 
 	return watvm, err
