@@ -66,7 +66,7 @@ func (h *HostAPICollection) WrapperFuncs() map[string]map[string]map[string]inte
 }
 
 type WASMRuntime interface {
-	Call(method string, args ...string) (string, error)
+	Call(method string, args ...interface{}) (interface{}, error)
 }
 
 // NewAspectRuntime is the factory method for creating aspect runtime

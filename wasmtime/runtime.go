@@ -2,6 +2,7 @@ package wasmtime
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/artela-network/runtime"
 	"github.com/bytecodealliance/wasmtime-go/v7"
@@ -58,7 +59,7 @@ func NewWASMTimeRuntime(code []byte, apis *runtime.HostAPICollection) (out runti
 		return nil, errors.Wrapf(err, "unable to link to abort")
 	}
 
-	// add abort function
+	// log function
 	log := wasmtime.WrapFunc(watvm.store, func(ptr int32) {
 		fmt.Println(string(watvm.memory.data[ptr : ptr+100]))
 	})
@@ -104,8 +105,8 @@ func NewWASMTimeRuntime(code []byte, apis *runtime.HostAPICollection) (out runti
 	return watvm, err
 }
 
-// Call wasm with marshed json string
-func (w *wasmTimeRuntime) Call(method string, args ...string) (string, error) {
+// Call wasm
+func (w *wasmTimeRuntime) Call(method string, args ...interface{}) (interface{}, error) {
 	run := w.instance.GetFunc(w.store, method)
 	if run == nil {
 		return "", errors.Errorf("method %s does not exist", method)
@@ -114,28 +115,40 @@ func (w *wasmTimeRuntime) Call(method string, args ...string) (string, error) {
 	ptrs := make([]interface{}, len(args))
 	for i, arg := range args {
 		var err error
-		ptrs[i], err = w.memory.Write(arg)
+		typeIndex, ok := runtime.TypeMapping[reflect.TypeOf(arg).Name()]
+		if !ok {
+			return nil, errors.Errorf("%v is not supported", arg)
+		}
+		rtType := runtime.TypeObjectMapping[typeIndex]
+		if err := rtType.Set(arg); err != nil {
+			return nil, errors.Wrapf(err, "set argument %+v", arg)
+		}
+		ptrs[i], err = rtType.Store()
 		if err != nil {
-			return "", err
+			return "", errors.Wrapf(err, "write memory %+v", arg)
 		}
 	}
 
+	fmt.Println("call ptrs: ", ptrs)
 	val, err := run.Call(w.store, ptrs...)
 	if err != nil {
 		return "", errors.Wrapf(err, "method %s execution fail", method)
 	}
 
-	outPtr, ok := val.(int32)
-	if !ok || outPtr < 0 {
-		return "", errors.Errorf("wasm execution result at %d is illegal", outPtr)
+	ptr, ok := val.(int32)
+	if !ok {
+		return nil, errors.Errorf("read output failed, value: %s", val)
 	}
 
-	data, err := w.memory.Read(int(outPtr))
-	if err != nil {
-		return "", errors.Wrapf(err, "unable to load wasm execution result at %d", outPtr)
+	h := &runtime.TypeHeader{}
+	h.HLoad(ptr)
+	resType, ok := runtime.TypeObjectMapping[h.DataType()]
+	if !ok {
+		return nil, errors.Errorf("read param failed, type %d not found", resType)
 	}
 
-	return data, nil
+	resType.Load(ptr)
+	return resType.Get(), nil
 }
 
 // defaultWASMTimeConfig provides a default wasmtime config for the runner.

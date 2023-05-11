@@ -59,7 +59,7 @@ func paramsRead(ptrs ...int32) ([]reflect.Value, error) {
 	for i, ptr := range ptrs {
 		h := &TypeHeader{}
 		h.HLoad(ptr)
-		reqType, ok := typeObjectMapping[TypeIndex(h.dataType)]
+		reqType, ok := TypeObjectMapping[h.DataType()]
 		if !ok {
 			log.Fatalf("type index %d is not valid", h.dataType)
 			return nil, errors.New("read param failed")
@@ -76,7 +76,7 @@ func paramsWrite(values []reflect.Value) (int32, error) {
 	}
 
 	if len(values) == 1 {
-		resType := typeObjectMapping[typeMapping[values[0].Type().Name()]]
+		resType := TypeObjectMapping[TypeMapping[values[0].Type().Name()]]
 		resType.Set(values[0].Interface())
 		ptr, err := resType.Store()
 		if err != nil {

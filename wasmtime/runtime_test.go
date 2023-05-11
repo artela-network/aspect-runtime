@@ -2,6 +2,7 @@ package wasmtime
 
 import (
 	"os"
+	"path"
 	"testing"
 
 	"github.com/artela-network/runtime"
@@ -9,18 +10,18 @@ import (
 )
 
 func TestCall(t *testing.T) {
-	raw, _ := os.ReadFile("/Users/likun/go/src/github.com/artela-network/wasm-poc-ts/wasm-aspect/build/release.wasm")
+	cwd, _ := os.Getwd()
+	raw, _ := os.ReadFile(path.Join(cwd, "./testdata/runtime_test.wasm"))
 
 	hostApis := runtime.NewHostAPICollection()
 
 	var (
-		arg string = "abcd"
-		// arg2            string = "1234"
+		arg             string = "abcd"
 		wasmTimeRuntime runtime.WASMRuntime
 		err             error
 	)
-	hostApis.AddApi("index", "test", "hello", func(arg1 []byte, arg2 string) string {
-		return string(arg1) + string(arg2) + "1234"
+	hostApis.AddApi("index", "test", "hello", func(arg string) string {
+		return "hello-" + arg + "-hello"
 	})
 
 	wasmTimeRuntime, err = NewWASMTimeRuntime(raw, hostApis)
@@ -30,6 +31,6 @@ func TestCall(t *testing.T) {
 		res, err := wasmTimeRuntime.Call("greet", arg)
 		require.Equal(t, nil, err)
 
-		require.Equal(t, "abcd1234", string(res))
+		require.Equal(t, "hello-greet-abcd-hello-greet", res.(string))
 	}
 }
