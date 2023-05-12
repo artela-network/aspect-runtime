@@ -58,6 +58,14 @@ func NewWASMTimeRuntime(code []byte, apis *runtime.HostAPICollection) (out runti
 		return nil, errors.Wrapf(err, "unable to link to abort")
 	}
 
+	// TODO, remove this, log function
+	log := wasmtime.WrapFunc(watvm.store, func(ptr int32) {
+		fmt.Println(string(watvm.memory.data[ptr : ptr+100]))
+	})
+	if err = watvm.linker.Define(watvm.store, "index", "test.log", log); err != nil {
+		return nil, errors.Wrapf(err, "unable to link to abort")
+	}
+
 	// instantiate module and store
 	if watvm.instance, err = watvm.linker.Instantiate(watvm.store, watvm.module); err != nil {
 		return nil, errors.Wrap(err, "unable to instantiate wasm module")
@@ -83,13 +91,21 @@ func NewWASMTimeRuntime(code []byte, apis *runtime.HostAPICollection) (out runti
 		},
 	}
 
+	runtime.NewMemory(
+		func() []byte {
+			return watvm.instance.GetExport(watvm.store, ExpNameMemory).Memory().UnsafeData(watvm.store)
+		},
+		func(size int32) (int32, error) {
+			return watvm.memory.allocate(size)
+		},
+	)
 	apis.SetArgHelper(watvm.memory)
 
 	return watvm, err
 }
 
-// Call wasm with marshed json string
-func (w *wasmTimeRuntime) Call(method string, args ...string) (string, error) {
+// Call wasm
+func (w *wasmTimeRuntime) Call(method string, args ...interface{}) (interface{}, error) {
 	run := w.instance.GetFunc(w.store, method)
 	if run == nil {
 		return "", errors.Errorf("method %s does not exist", method)
@@ -98,9 +114,17 @@ func (w *wasmTimeRuntime) Call(method string, args ...string) (string, error) {
 	ptrs := make([]interface{}, len(args))
 	for i, arg := range args {
 		var err error
-		ptrs[i], err = w.memory.Write(arg)
+		typeIndex := runtime.AssertType(arg)
+		rtType, ok := runtime.TypeObjectMapping[typeIndex]
+		if !ok {
+			return nil, errors.Errorf("%v is not supported", arg)
+		}
+		if err := rtType.Set(arg); err != nil {
+			return nil, errors.Wrapf(err, "set argument %+v", arg)
+		}
+		ptrs[i], err = rtType.Store()
 		if err != nil {
-			return "", err
+			return "", errors.Wrapf(err, "write memory %+v", arg)
 		}
 	}
 
@@ -109,17 +133,20 @@ func (w *wasmTimeRuntime) Call(method string, args ...string) (string, error) {
 		return "", errors.Wrapf(err, "method %s execution fail", method)
 	}
 
-	outPtr, ok := val.(int32)
-	if !ok || outPtr < 0 {
-		return "", errors.Errorf("wasm execution result at %d is illegal", outPtr)
+	ptr, ok := val.(int32)
+	if !ok {
+		return nil, errors.Errorf("read output failed, value: %s", val)
 	}
 
-	data, err := w.memory.Read(int(outPtr))
-	if err != nil {
-		return "", errors.Wrapf(err, "unable to load wasm execution result at %d", outPtr)
+	h := &runtime.TypeHeader{}
+	h.HLoad(ptr)
+	resType, ok := runtime.TypeObjectMapping[h.DataType()]
+	if !ok {
+		return nil, errors.Errorf("read param failed, type %d not found", resType)
 	}
 
-	return data, nil
+	resType.Load(ptr)
+	return resType.Get(), nil
 }
 
 // defaultWASMTimeConfig provides a default wasmtime config for the runner.

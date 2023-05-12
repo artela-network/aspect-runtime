@@ -3,6 +3,7 @@ package wasmtime
 import (
 	"os"
 	"path"
+	"reflect"
 	"testing"
 
 	"github.com/artela-network/runtime"
@@ -16,22 +17,45 @@ func TestCall(t *testing.T) {
 	hostApis := runtime.NewHostAPICollection()
 
 	var (
-		arg1 string = "abcd"
-		// arg2            string = "1234"
+		arg             string = "abcd"
 		wasmTimeRuntime runtime.WASMRuntime
 		err             error
 	)
 	hostApis.AddApi("index", "test", "hello", func(arg string) string {
-		return arg + "1234"
+		return "hello-" + arg + "-hello"
 	})
 
 	wasmTimeRuntime, err = NewWASMTimeRuntime(raw, hostApis)
 	require.Equal(t, nil, err)
 
 	{
-		res, err := wasmTimeRuntime.Call("test", arg1)
+		res, err := wasmTimeRuntime.Call("greet", arg)
 		require.Equal(t, nil, err)
 
-		require.Equal(t, "abcd1234", string(res))
+		require.Equal(t, "hello-greet-abcd-hello-greet", res.(string))
 	}
+}
+
+func TestBytes(t *testing.T) {
+	cwd, _ := os.Getwd()
+	raw, _ := os.ReadFile(path.Join(cwd, "./testdata/runtime_test.wasm"))
+
+	hostApis := runtime.NewHostAPICollection()
+
+	hostApis.AddApi("index", "test", "hello", func(arg string) string {
+		return "hello-" + arg + "-hello"
+	})
+
+	var (
+		arg             []byte = []byte{0x1, 0x2, 0x3, 0x4}
+		wasmTimeRuntime runtime.WASMRuntime
+		err             error
+	)
+
+	wasmTimeRuntime, err = NewWASMTimeRuntime(raw, hostApis)
+	require.Equal(t, nil, err)
+	res, err := wasmTimeRuntime.Call("testBytes", arg)
+	require.Equal(t, nil, err)
+
+	require.Equal(t, true, reflect.DeepEqual([]byte{0x2, 0x3, 0x4, 0x5}, res.([]byte)))
 }
