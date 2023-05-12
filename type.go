@@ -4,8 +4,8 @@ package runtime
 type TypeIndex int16
 
 const (
-	// TypeEmpty
-	TypeInt8 TypeIndex = iota
+	TypeEmpty TypeIndex = iota // wrong type, no handler for empty type
+	TypeInt8
 	TypeInt16
 	TypeInt32
 	TypeInt64
@@ -23,8 +23,34 @@ var TypeObjectMapping = map[TypeIndex]IType{
 	TypeString:    NewString(),
 }
 
-var TypeMapping = map[string]TypeIndex{
-	"[]byte":  TypeByteArray,
-	"string":  TypeString,
-	"*string": TypeString,
+func AssertType(v interface{}) TypeIndex {
+	switch v.(type) {
+	case int8:
+		return TypeInt8
+	case int16:
+		return TypeInt16
+	case int32:
+		return TypeInt32
+	case int64:
+		return TypeInt64
+	case uint8:
+		return TypeUint8
+	case uint16:
+		return TypeUint16
+	case uint32:
+		return TypeUint32
+	case uint64:
+		return TypeUint64
+	case bool:
+		return TypeBool
+	case string:
+		return TypeString
+	case []byte:
+		return TypeByteArray
+
+		// for struct
+		// case MyStruct, *MyStruct:
+		// return TypeMyStruct
+	}
+	return TypeEmpty
 }

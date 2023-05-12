@@ -6,7 +6,8 @@ export declare namespace test {
 }
 
 enum typeIndex {
-    TypeInt8 = 0,
+    Empty = 0,
+    TypeInt8,
     TypeInt16,
     TypeInt32,
     TypeInt64,
@@ -81,6 +82,46 @@ class AString {
     }
 }
 
+class AUint8Array {
+    head: header;
+    body: Uint8Array; // utf-16 encoder
+    constructor(head: header = new header(typeIndex.TypeByteArray, 0), body: Uint8Array = new Uint8Array(0)) {
+        this.head = head;
+        this.body = body;
+    }
+
+    set(data: Uint8Array): void {
+        this.body = data;
+        this.head.dataLen = data.length;
+    }
+
+    get(): Uint8Array {
+        return this.body;
+    }
+
+    load(ptr: i32): void {
+        this.head = new header(0, 0);
+        this.head.load(ptr);
+        let bodyPtr = ptr + this.head.len();
+        this.body = new Uint8Array(this.head.dataLen);
+        for (let i = 0; i < this.head.dataLen; i++) {
+            this.body[i] = u8(i32.load8_u(bodyPtr));
+            bodyPtr++;
+        }
+    }
+
+    store(): i32 {
+        let ptr = allocate(this.head.dataLen + this.head.len())
+        this.head.store(ptr);
+        let bodyPtr = ptr + this.head.len();
+        for (let i = 0; i < this.head.dataLen; i++) {
+            memory.fill(bodyPtr, this.body[i], 1)
+            bodyPtr++;
+        }
+        return ptr;
+    }
+}
+
 export function greet(ptr: i32): i32 {
     let req = new AString();
     req.load(ptr);
@@ -96,6 +137,18 @@ export function greet(ptr: i32): i32 {
     retAs.set(helloRet.get() + "-greet");
     let retPtr = retAs.store();
     return retPtr;
+}
+
+export function testBytes(ptr: i32): i32 {
+    let req = new AUint8Array();
+    req.load(ptr);
+    for (let i = 0; i < req.head.dataLen; i++) {
+        req.body[i] += 1;
+    }
+
+    let res = new AUint8Array();
+    res.set(req.body);
+    return res.store();
 }
 
 

@@ -1,9 +1,10 @@
 package runtime
 
 import (
-	"errors"
 	"log"
 	"reflect"
+
+	"github.com/pkg/errors"
 )
 
 func Wrappers(fn interface{}) (interface{}, error) {
@@ -41,14 +42,14 @@ func Wrappers(fn interface{}) (interface{}, error) {
 func executeWrapper(fn interface{}, ptrs ...int32) int32 {
 	args, err := paramsRead(ptrs...)
 	if err != nil {
-		log.Fatalf("read params %s", err)
+		log.Fatal("read params:", err)
 		return -1
 	}
 	v := reflect.ValueOf(fn)
 	res := v.Call(args)
 	ptr, err := paramsWrite(res)
 	if err != nil {
-		log.Fatal("write params", err)
+		log.Fatal("write params:", err)
 	}
 	return ptr
 }
@@ -76,7 +77,11 @@ func paramsWrite(values []reflect.Value) (int32, error) {
 	}
 
 	if len(values) == 1 {
-		resType := TypeObjectMapping[TypeMapping[values[0].Type().Name()]]
+		retIndex := AssertType(values[0].Interface())
+		resType, ok := TypeObjectMapping[retIndex]
+		if !ok {
+			return 0, errors.Errorf("%v is not supported", values[0])
+		}
 		resType.Set(values[0].Interface())
 		ptr, err := resType.Store()
 		if err != nil {

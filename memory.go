@@ -28,8 +28,6 @@ func (m *Memory) Write(ptr int32, data []byte) {
 }
 
 func (m *Memory) Read(ptr int32, size int32) []byte {
-	data := m.data()
-	_ = data
 	return m.data()[ptr : ptr+size]
 }
 

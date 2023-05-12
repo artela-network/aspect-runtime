@@ -2,7 +2,6 @@ package wasmtime
 
 import (
 	"fmt"
-	"reflect"
 
 	"github.com/artela-network/runtime"
 	"github.com/bytecodealliance/wasmtime-go/v7"
@@ -59,7 +58,7 @@ func NewWASMTimeRuntime(code []byte, apis *runtime.HostAPICollection) (out runti
 		return nil, errors.Wrapf(err, "unable to link to abort")
 	}
 
-	// log function
+	// TODO, remove this, log function
 	log := wasmtime.WrapFunc(watvm.store, func(ptr int32) {
 		fmt.Println(string(watvm.memory.data[ptr : ptr+100]))
 	})
@@ -115,11 +114,11 @@ func (w *wasmTimeRuntime) Call(method string, args ...interface{}) (interface{},
 	ptrs := make([]interface{}, len(args))
 	for i, arg := range args {
 		var err error
-		typeIndex, ok := runtime.TypeMapping[reflect.TypeOf(arg).Name()]
+		typeIndex := runtime.AssertType(arg)
+		rtType, ok := runtime.TypeObjectMapping[typeIndex]
 		if !ok {
 			return nil, errors.Errorf("%v is not supported", arg)
 		}
-		rtType := runtime.TypeObjectMapping[typeIndex]
 		if err := rtType.Set(arg); err != nil {
 			return nil, errors.Wrapf(err, "set argument %+v", arg)
 		}
@@ -129,7 +128,6 @@ func (w *wasmTimeRuntime) Call(method string, args ...interface{}) (interface{},
 		}
 	}
 
-	fmt.Println("call ptrs: ", ptrs)
 	val, err := run.Call(w.store, ptrs...)
 	if err != nil {
 		return "", errors.Wrapf(err, "method %s execution fail", method)
