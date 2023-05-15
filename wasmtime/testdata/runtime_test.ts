@@ -2,6 +2,7 @@
 
 export declare namespace test {
     function hello(ptr: i32): i32
+    function hello2(ptr1: i32, ptr2: i32, ptr3: i32): i32
     function log(s: string): void
 }
 
@@ -135,6 +136,34 @@ export function greet(ptr: i32): i32 {
 
     let retAs = new AString();
     retAs.set(helloRet.get() + "-greet");
+    let retPtr = retAs.store();
+    return retPtr;
+}
+
+export function greet2(ptr1: i32, ptr2: i32, ptr3: i32): i32 {
+    let req1 = new AString();
+    req1.load(ptr1);
+    let req2 = new AString();
+    req2.load(ptr2);
+    let req3 = new AString();
+    req3.load(ptr3);
+
+    let helloReq1 = new AString();
+    helloReq1.set(req1.get())
+    let helloArg1 = helloReq1.store()
+    let helloReq2 = new AString();
+    helloReq2.set(req2.get())
+    let helloArg2 = helloReq2.store()
+    let helloReq3 = new AString();
+    helloReq3.set(req3.get())
+    let helloArg3 = helloReq3.store()
+
+    let helloRetPtr = test.hello2(helloArg1, helloArg2, helloArg3)
+    let helloRet = new AString();
+    helloRet.load(helloRetPtr);
+    
+    let retAs = new AString();
+    retAs.set(helloRet.get() + "-over");
     let retPtr = retAs.store();
     return retPtr;
 }
