@@ -7,6 +7,7 @@ require (
 	github.com/ethereum/go-ethereum v1.11.6
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.2
+	google.golang.org/protobuf v1.28.1
 )
 
 require (

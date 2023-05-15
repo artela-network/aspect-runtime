@@ -5,21 +5,22 @@ type Memory struct {
 	alloc func(int32) (int32, error)
 }
 
-var globalMemory *Memory
+// // TODO (Eric) remove global memory, this is unuseable for multi-thread to run wasm.
+// var globalMemory *Memory
 
-func MemoryInstance() *Memory {
-	return globalMemory
-}
+// func MemoryInstance() *Memory {
+// 	return globalMemory
+// }
 
-func NewMemory(data func() []byte, alloc func(int32) (int32, error)) {
-	globalMemory = &Memory{
+func NewMemory(data func() []byte, alloc func(int32) (int32, error)) Memory {
+	return Memory{
 		data:  data,
 		alloc: alloc,
 	}
 }
 
 // Data return the whole linear memory.
-func (m *Memory) Write(ptr int32, data []byte) {
+func (m Memory) Write(ptr int32, data []byte) {
 	buf := m.data()
 	for i := 0; i < len(data); i++ {
 		buf[ptr] = data[i]
