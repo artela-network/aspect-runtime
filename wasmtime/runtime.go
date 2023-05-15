@@ -21,7 +21,7 @@ type wasmTimeRuntime struct {
 	linker   *wasmtime.Linker
 	instance *wasmtime.Instance
 
-	memory *Memory
+	memory *runtime.Memory
 }
 
 func NewWASMTimeRuntime(code []byte, apis *runtime.HostAPICollection) (out runtime.WASMRuntime, err error) {
@@ -60,7 +60,7 @@ func NewWASMTimeRuntime(code []byte, apis *runtime.HostAPICollection) (out runti
 
 	// TODO, remove this, log function
 	log := wasmtime.WrapFunc(watvm.store, func(ptr int32) {
-		fmt.Println(string(watvm.memory.data[ptr : ptr+100]))
+		fmt.Println(string(watvm.memory.Read(ptr, 100)))
 	})
 	if err = watvm.linker.Define(watvm.store, "index", "test.log", log); err != nil {
 		return nil, errors.Wrapf(err, "unable to link to abort")
@@ -71,9 +71,11 @@ func NewWASMTimeRuntime(code []byte, apis *runtime.HostAPICollection) (out runti
 		return nil, errors.Wrap(err, "unable to instantiate wasm module")
 	}
 
-	watvm.memory = &Memory{
-		data: watvm.instance.GetExport(watvm.store, ExpNameMemory).Memory().UnsafeData(watvm.store),
-		allocate: func(size int32) (int32, error) {
+	runtime.NewMemory(
+		func() []byte {
+			return watvm.instance.GetExport(watvm.store, ExpNameMemory).Memory().UnsafeData(watvm.store)
+		},
+		func(size int32) (int32, error) {
 			memoryAllocator := watvm.instance.GetFunc(watvm.store, "allocate")
 			if memoryAllocator == nil {
 				return 0, errors.Wrap(err, "unable to allocate memory in wasm")
@@ -86,20 +88,7 @@ func NewWASMTimeRuntime(code []byte, apis *runtime.HostAPICollection) (out runti
 
 			return res.(int32), nil
 		},
-		refresh: func(m *Memory) {
-			m.data = watvm.instance.GetExport(watvm.store, ExpNameMemory).Memory().UnsafeData(watvm.store)
-		},
-	}
-
-	runtime.NewMemory(
-		func() []byte {
-			return watvm.instance.GetExport(watvm.store, ExpNameMemory).Memory().UnsafeData(watvm.store)
-		},
-		func(size int32) (int32, error) {
-			return watvm.memory.allocate(size)
-		},
 	)
-	apis.SetArgHelper(watvm.memory)
 
 	return watvm, err
 }
