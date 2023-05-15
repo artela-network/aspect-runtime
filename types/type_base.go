@@ -38,10 +38,13 @@ func (c *Context) Memory() *Memory {
 	return c.memory
 }
 
+<<<<<<< HEAD:types/type_base.go
 func (c *Context) SetMemory(mem *Memory) {
 	c.memory = mem
 }
 
+=======
+>>>>>>> b954a1a (add context):type_base.go
 type TypeHeader struct {
 	dataType int16
 
