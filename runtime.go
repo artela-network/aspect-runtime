@@ -10,10 +10,7 @@ type (
 	runtimeBuilder    func(code []byte, apis *HostAPICollection) (out WASMRuntime, err error)
 	AspectRuntimeType int
 
-	ArgHelper interface {
-		Write(msg string) (int32, error)
-		Read(ptr int) (string, error)
-	}
+	Ctx *Context
 
 	HostAPICollection struct {
 		// a function defined in module::namesapce::method
