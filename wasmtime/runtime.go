@@ -92,8 +92,14 @@ func NewWASMTimeRuntime(code []byte, apis *runtime.HostAPICollection) (out runti
 
 				return res.(int32), nil
 			},
+<<<<<<< HEAD:wasmtime/runtime.go
 		))
 	// apis.SetArgHelper(watvm.memory)
+=======
+		),
+	)
+	apis.SetMemory(watvm.ctx.memory)
+>>>>>>> bc80be5 (fix: pass memory instead of ctx):wasmtime.go
 
 	return watvm, err
 }
