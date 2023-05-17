@@ -7,7 +7,7 @@ import (
 )
 
 type (
-	runtimeBuilder    func(code []byte, apis *HostAPICollection) (out WASMRuntime, err error)
+	runtimeBuilder    func(code []byte, apis *HostAPICollection) (out AspectRuntime, err error)
 	AspectRuntimeType int
 
 	Ctx *Context
@@ -28,55 +28,26 @@ var (
 	builders = make(map[AspectRuntimeType]runtimeBuilder)
 )
 
-func RegisterAspectRunner(runnerType AspectRuntimeType, builder runtimeBuilder) {
-	builders[runnerType] = builder
-}
-
-func NewHostAPICollection() *HostAPICollection {
-	return &HostAPICollection{wrapperFuncs: make(map[string]map[string]map[string]interface{}, 0)}
-}
-
-func (h *HostAPICollection) AddApi(module, ns, method string, fn interface{}) error {
-	wrapper, err := Wrappers(fn)
-	if err != nil {
-		return err
-	}
-
-	if h.wrapperFuncs[module] == nil {
-		h.wrapperFuncs[module] = make(map[string]map[string]interface{}, 1)
-	}
-
-	if h.wrapperFuncs[module][ns] == nil {
-		h.wrapperFuncs[module][ns] = make(map[string]interface{}, 1)
-	}
-
-	h.wrapperFuncs[module][ns][method] = wrapper
-	return nil
-}
-
-func (h *HostAPICollection) SetArgHelper(helper ArgHelper) {
-	h.argHelper = helper
-}
-
-func (h *HostAPICollection) WrapperFuncs() map[string]map[string]map[string]interface{} {
-	return h.wrapperFuncs
-}
-
-type WASMRuntime interface {
+type AspectRuntime interface {
 	Call(method string, args ...interface{}) (interface{}, error)
 }
 
 // NewAspectRuntime is the factory method for creating aspect runtime
-func NewAspectRuntime(runtimeType AspectRuntimeType, code []byte, apis *HostAPICollection) (WASMRuntime, error) {
+func NewAspectRuntime(runtimeType AspectRuntimeType, code []byte, apis *HostAPICollection) (AspectRuntime, error) {
+	if runtimeType == WASMTime {
+		// only support wasm now
+		builders[runtimeType] = NewWASMTimeRuntime
+	}
+
 	builder := builders[runtimeType]
 	if builder == nil {
 		return nil, errors.New("runtime builder does not exist")
 	}
 
-	wasmTime, err := builder(code, apis)
+	aspectRuntime, err := builder(code, apis)
 	if err != nil {
 		return nil, err
 	}
 
-	return wasmTime, nil
+	return aspectRuntime, nil
 }
