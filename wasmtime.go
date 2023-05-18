@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	rtypes "github.com/artela-network/runtime/types"
 	"github.com/bytecodealliance/wasmtime-go/v7"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/pkg/errors"
@@ -21,10 +22,10 @@ type wasmTimeRuntime struct {
 	linker   *wasmtime.Linker
 	instance *wasmtime.Instance
 
-	ctx *Context
+	ctx *rtypes.Context
 }
 
-func NewWASMTimeRuntime(code []byte, apis *HostAPICollection) (out AspectRuntime, err error) {
+func NewWASMTimeRuntime(code []byte, apis *HostAPIRegister) (out AspectRuntime, err error) {
 	watvm := &wasmTimeRuntime{engine: wasmtime.NewEngineWithConfig(defaultWASMTimeConfig())}
 	watvm.store = wasmtime.NewStore(watvm.engine)
 	watvm.module, err = wasmtime.NewModule(watvm.engine, code)
@@ -72,9 +73,9 @@ func NewWASMTimeRuntime(code []byte, apis *HostAPICollection) (out AspectRuntime
 		return nil, errors.Wrap(err, "unable to instantiate wasm module")
 	}
 
-	watvm.ctx = NewContext(
+	watvm.ctx = rtypes.NewContext(
 		context.Background(),
-		NewMemory(
+		rtypes.NewMemory(
 			func() []byte {
 				return watvm.instance.GetExport(watvm.store, ExpNameMemory).Memory().UnsafeData(watvm.store)
 			},
@@ -93,7 +94,7 @@ func NewWASMTimeRuntime(code []byte, apis *HostAPICollection) (out AspectRuntime
 			},
 		),
 	)
-	apis.SetMemory(watvm.ctx.memory)
+	apis.SetMemory(watvm.ctx.Memory())
 
 	return watvm, err
 }
@@ -108,8 +109,8 @@ func (w *wasmTimeRuntime) Call(method string, args ...interface{}) (interface{},
 	ptrs := make([]interface{}, len(args))
 	for i, arg := range args {
 		var err error
-		typeIndex := AssertType(arg)
-		rtType, ok := TypeObjectMapping[typeIndex]
+		typeIndex := rtypes.AssertType(arg)
+		rtType, ok := rtypes.TypeObjectMapping[typeIndex]
 		if !ok {
 			return nil, errors.Errorf("%v is not supported", arg)
 		}
@@ -132,9 +133,9 @@ func (w *wasmTimeRuntime) Call(method string, args ...interface{}) (interface{},
 		return nil, errors.Errorf("read output failed, value: %s", val)
 	}
 
-	h := &TypeHeader{}
+	h := &rtypes.TypeHeader{}
 	h.HLoad(w.ctx, ptr)
-	resType, ok := TypeObjectMapping[h.DataType()]
+	resType, ok := rtypes.TypeObjectMapping[h.DataType()]
 	if !ok {
 		return nil, errors.Errorf("read param failed, type %d not found", resType)
 	}

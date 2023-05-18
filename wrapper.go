@@ -8,11 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-<<<<<<< HEAD
 func Wrappers(ctx *rtypes.Context, fn interface{}) (interface{}, error) {
-=======
-func Wrappers(ctx *Context, fn interface{}) (interface{}, error) {
->>>>>>> b954a1a (add context)
 	errNotSupport := errors.New("host function not supported")
 	t := reflect.TypeOf(fn)
 	if t.NumOut() > 1 {
@@ -44,11 +40,7 @@ func Wrappers(ctx *Context, fn interface{}) (interface{}, error) {
 	return nil, errNotSupport
 }
 
-<<<<<<< HEAD
 func executeWrapper(ctx *rtypes.Context, fn interface{}, ptrs ...int32) int32 {
-=======
-func executeWrapper(ctx *Context, fn interface{}, ptrs ...int32) int32 {
->>>>>>> b954a1a (add context)
 	args, err := paramsRead(ctx, ptrs...)
 	if err != nil {
 		log.Fatal("read params:", err)
@@ -63,7 +55,6 @@ func executeWrapper(ctx *Context, fn interface{}, ptrs ...int32) int32 {
 	return ptr
 }
 
-<<<<<<< HEAD
 func paramsRead(ctx *rtypes.Context, ptrs ...int32) ([]reflect.Value, error) {
 	args := make([]reflect.Value, len(ptrs))
 
@@ -71,16 +62,8 @@ func paramsRead(ctx *rtypes.Context, ptrs ...int32) ([]reflect.Value, error) {
 		h := &rtypes.TypeHeader{}
 		h.HLoad(ctx, ptr)
 		reqType, ok := rtypes.TypeObjectMapping[h.DataType()]
-=======
-func paramsRead(ctx *Context, ptrs ...int32) ([]reflect.Value, error) {
-	args := make([]reflect.Value, len(ptrs))
-
-	for i, ptr := range ptrs {
-		h := &TypeHeader{}
-		h.HLoad(ctx, ptr)
-		reqType, ok := TypeObjectMapping[h.DataType()]
->>>>>>> b954a1a (add context)
 		if !ok {
+			log.Fatalf("type index %d is not valid", h.DataType())
 			log.Fatalf("type index %d is not valid", h.DataType())
 			return nil, errors.New("read param failed")
 		}
@@ -90,11 +73,7 @@ func paramsRead(ctx *Context, ptrs ...int32) ([]reflect.Value, error) {
 	return args, nil
 }
 
-<<<<<<< HEAD
 func paramsWrite(ctx *rtypes.Context, values []reflect.Value) (int32, error) {
-=======
-func paramsWrite(ctx *Context, values []reflect.Value) (int32, error) {
->>>>>>> b954a1a (add context)
 	if len(values) > 1 {
 		return -1, errors.New("values count is expected to 1")
 	}

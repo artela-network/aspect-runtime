@@ -5,22 +5,8 @@ import (
 )
 
 type (
-<<<<<<< HEAD
 	engine      func(code []byte, apis *HostAPIRegister) (out AspectRuntime, err error)
 	RuntimeType int
-=======
-	runtimeBuilder    func(code []byte, apis *HostAPICollection) (out WASMRuntime, err error)
-	AspectRuntimeType int
-
-	Ctx *Context
-
-	HostAPICollection struct {
-		// a function defined in module::namesapce::method
-		wrapperFuncs map[string]map[string]map[string]interface{}
-		logger       log.Logger
-		argHelper    ArgHelper
-	}
->>>>>>> b954a1a (add context)
 )
 
 const (

@@ -5,20 +5,8 @@ type Memory struct {
 	alloc func(int32) (int32, error)
 }
 
-<<<<<<< HEAD:types/memory.go
 func NewMemory(data func() []byte, alloc func(int32) (int32, error)) *Memory {
 	return &Memory{
-=======
-// // TODO (Eric) remove global memory, this is unuseable for multi-thread to run wasm.
-// var globalMemory *Memory
-
-// func MemoryInstance() *Memory {
-// 	return globalMemory
-// }
-
-func NewMemory(data func() []byte, alloc func(int32) (int32, error)) Memory {
-	return Memory{
->>>>>>> b954a1a (add context):memory.go
 		data:  data,
 		alloc: alloc,
 	}
