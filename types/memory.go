@@ -1,19 +1,12 @@
-package runtime
+package runtimetypes
 
 type Memory struct {
 	data  func() []byte
 	alloc func(int32) (int32, error)
 }
 
-// // TODO (Eric) remove global memory, this is unuseable for multi-thread to run wasm.
-// var globalMemory *Memory
-
-// func MemoryInstance() *Memory {
-// 	return globalMemory
-// }
-
-func NewMemory(data func() []byte, alloc func(int32) (int32, error)) Memory {
-	return Memory{
+func NewMemory(data func() []byte, alloc func(int32) (int32, error)) *Memory {
+	return &Memory{
 		data:  data,
 		alloc: alloc,
 	}

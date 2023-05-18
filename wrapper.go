@@ -4,10 +4,11 @@ import (
 	"log"
 	"reflect"
 
+	rtypes "github.com/artela-network/runtime/types"
 	"github.com/pkg/errors"
 )
 
-func Wrappers(ctx *Context, fn interface{}) (interface{}, error) {
+func Wrappers(ctx *rtypes.Context, fn interface{}) (interface{}, error) {
 	errNotSupport := errors.New("host function not supported")
 	t := reflect.TypeOf(fn)
 	if t.NumOut() > 1 {
@@ -39,7 +40,7 @@ func Wrappers(ctx *Context, fn interface{}) (interface{}, error) {
 	return nil, errNotSupport
 }
 
-func executeWrapper(ctx *Context, fn interface{}, ptrs ...int32) int32 {
+func executeWrapper(ctx *rtypes.Context, fn interface{}, ptrs ...int32) int32 {
 	args, err := paramsRead(ctx, ptrs...)
 	if err != nil {
 		log.Fatal("read params:", err)
@@ -54,15 +55,15 @@ func executeWrapper(ctx *Context, fn interface{}, ptrs ...int32) int32 {
 	return ptr
 }
 
-func paramsRead(ctx *Context, ptrs ...int32) ([]reflect.Value, error) {
+func paramsRead(ctx *rtypes.Context, ptrs ...int32) ([]reflect.Value, error) {
 	args := make([]reflect.Value, len(ptrs))
 
 	for i, ptr := range ptrs {
-		h := &TypeHeader{}
+		h := &rtypes.TypeHeader{}
 		h.HLoad(ctx, ptr)
-		reqType, ok := TypeObjectMapping[h.DataType()]
+		reqType, ok := rtypes.TypeObjectMapping[h.DataType()]
 		if !ok {
-			log.Fatalf("type index %d is not valid", h.dataType)
+			log.Fatalf("type index %d is not valid", h.DataType())
 			return nil, errors.New("read param failed")
 		}
 		reqType.Load(ctx, ptr)
@@ -71,14 +72,14 @@ func paramsRead(ctx *Context, ptrs ...int32) ([]reflect.Value, error) {
 	return args, nil
 }
 
-func paramsWrite(ctx *Context, values []reflect.Value) (int32, error) {
+func paramsWrite(ctx *rtypes.Context, values []reflect.Value) (int32, error) {
 	if len(values) > 1 {
 		return -1, errors.New("values count is expected to 1")
 	}
 
 	if len(values) == 1 {
-		retIndex := AssertType(values[0].Interface())
-		resType, ok := TypeObjectMapping[retIndex]
+		retIndex := rtypes.AssertType(values[0].Interface())
+		resType, ok := rtypes.TypeObjectMapping[retIndex]
 		if !ok {
 			return 0, errors.Errorf("%v is not supported", values[0])
 		}

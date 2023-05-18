@@ -1,4 +1,4 @@
-package runtime
+package runtimetypes
 
 import (
 	"context"
@@ -36,6 +36,10 @@ func NewContext(ctx context.Context, memory *Memory) *Context {
 
 func (c *Context) Memory() *Memory {
 	return c.memory
+}
+
+func (c *Context) SetMemory(mem *Memory) {
+	c.memory = mem
 }
 
 type TypeHeader struct {

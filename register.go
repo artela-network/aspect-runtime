@@ -3,23 +3,25 @@ package runtime
 import (
 	"context"
 	"log"
+
+	rtypes "github.com/artela-network/runtime/types"
 )
 
-type HostAPICollection struct {
+type HostAPIRegister struct {
 	// a function defined in module::namesapce::method
 	wrapperFuncs map[string]map[string]map[string]interface{}
 	logger       log.Logger
-	ctx          *Context
+	ctx          *rtypes.Context
 }
 
-func NewHostAPICollection() *HostAPICollection {
-	return &HostAPICollection{
+func NewHostAPIRegister() *HostAPIRegister {
+	return &HostAPIRegister{
 		wrapperFuncs: make(map[string]map[string]map[string]interface{}, 0),
-		ctx:          NewContext(context.Background(), nil),
+		ctx:          rtypes.NewContext(context.Background(), nil),
 	}
 }
 
-func (h *HostAPICollection) AddApi(module, ns, method string, fn interface{}) error {
+func (h *HostAPIRegister) AddApi(module, ns, method string, fn interface{}) error {
 	wrapper, err := Wrappers(h.ctx, fn)
 	if err != nil {
 		return err
@@ -37,14 +39,14 @@ func (h *HostAPICollection) AddApi(module, ns, method string, fn interface{}) er
 	return nil
 }
 
-func (h *HostAPICollection) WrapperFuncs() map[string]map[string]map[string]interface{} {
+func (h *HostAPIRegister) WrapperFuncs() map[string]map[string]map[string]interface{} {
 	return h.wrapperFuncs
 }
 
-func (h *HostAPICollection) SetMemory(mem *Memory) {
+func (h *HostAPIRegister) SetMemory(mem *rtypes.Memory) {
 	if h.ctx == nil {
-		h.ctx = NewContext(context.Background(), mem)
+		h.ctx = rtypes.NewContext(context.Background(), mem)
 		return
 	}
-	h.ctx.memory = mem
+	h.ctx.SetMemory(mem)
 }

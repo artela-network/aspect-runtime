@@ -1,4 +1,4 @@
-package runtime
+package runtimetypes
 
 import (
 	"reflect"
@@ -127,27 +127,27 @@ func NewBool() *Bool {
 	}
 }
 
-func (b *Bool) Store() (int32, error) {
+func (b *Bool) Store(ctx *Context) (int32, error) {
 	size := b.HLen() + b.dataLen
-	ptr, err := MemoryInstance().alloc(size)
+	ptr, err := ctx.Memory().alloc(size)
 	if err != nil {
 		return 0, errors.Wrap(err, "alloc memory")
 	}
 
-	b.HStore(ptr)
+	b.HStore(ctx, ptr)
 	data := byte(0)
 	if b.body {
 		data = byte(1)
 	}
-	MemoryInstance().Write(ptr+b.HLen(), []byte{data})
+	ctx.Memory().Write(ptr+b.HLen(), []byte{data})
 
 	return ptr, nil
 }
 
-func (b *Bool) Load(ptr int32) {
-	b.TypeHeader.HLoad(ptr)
+func (b *Bool) Load(ctx *Context, ptr int32) {
+	b.TypeHeader.HLoad(ctx, ptr)
 	b.body = false
-	if MemoryInstance().Read(ptr+b.HLen(), b.dataLen)[0] == 1 {
+	if ctx.Memory().Read(ptr+b.HLen(), b.dataLen)[0] == 1 {
 		b.body = true
 	}
 }

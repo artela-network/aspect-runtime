@@ -1,4 +1,4 @@
-package runtime
+package runtimetypes
 
 // TypeIndex defines the index of runtime type
 type TypeIndex int16

@@ -1,31 +1,20 @@
 package runtime
 
 import (
-	"log"
-
 	"github.com/pkg/errors"
 )
 
 type (
-	runtimeBuilder    func(code []byte, apis *HostAPICollection) (out AspectRuntime, err error)
-	AspectRuntimeType int
-
-	Ctx *Context
-
-	HostAPICollection struct {
-		// a function defined in module::namesapce::method
-		wrapperFuncs map[string]map[string]map[string]interface{}
-		logger       log.Logger
-		argHelper    ArgHelper
-	}
+	engine      func(code []byte, apis *HostAPIRegister) (out AspectRuntime, err error)
+	RuntimeType int
 )
 
 const (
-	WASMTime AspectRuntimeType = iota
+	WASM RuntimeType = iota
 )
 
 var (
-	builders = make(map[AspectRuntimeType]runtimeBuilder)
+	enginePool = make(map[RuntimeType]engine)
 )
 
 type AspectRuntime interface {
@@ -33,18 +22,18 @@ type AspectRuntime interface {
 }
 
 // NewAspectRuntime is the factory method for creating aspect runtime
-func NewAspectRuntime(runtimeType AspectRuntimeType, code []byte, apis *HostAPICollection) (AspectRuntime, error) {
-	if runtimeType == WASMTime {
+func NewAspectRuntime(runtimeType RuntimeType, code []byte, apis *HostAPIRegister) (AspectRuntime, error) {
+	if runtimeType == WASM {
 		// only support wasm now
-		builders[runtimeType] = NewWASMTimeRuntime
+		enginePool[runtimeType] = NewWASMTimeRuntime
 	}
 
-	builder := builders[runtimeType]
-	if builder == nil {
-		return nil, errors.New("runtime builder does not exist")
+	engine := enginePool[runtimeType]
+	if engine == nil {
+		return nil, errors.New("runtime engine does not exist")
 	}
 
-	aspectRuntime, err := builder(code, apis)
+	aspectRuntime, err := engine(code, apis)
 	if err != nil {
 		return nil, err
 	}
