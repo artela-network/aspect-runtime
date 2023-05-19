@@ -112,3 +112,60 @@ func (s *String) Get() interface{} {
 func (s *String) DataType() reflect.Type {
 	return reflect.TypeOf(s.body)
 }
+
+type Bool struct {
+	TypeHeader
+
+	body bool
+}
+
+func NewBool() *Bool {
+	return &Bool{
+		TypeHeader: TypeHeader{
+			dataType: int16(TypeBool),
+		},
+	}
+}
+
+func (b *Bool) Store() (int32, error) {
+	size := b.HLen() + b.dataLen
+	ptr, err := MemoryInstance().alloc(size)
+	if err != nil {
+		return 0, errors.Wrap(err, "alloc memory")
+	}
+
+	b.HStore(ptr)
+	data := byte(0)
+	if b.body {
+		data = byte(1)
+	}
+	MemoryInstance().Write(ptr+b.HLen(), []byte{data})
+
+	return ptr, nil
+}
+
+func (b *Bool) Load(ptr int32) {
+	b.TypeHeader.HLoad(ptr)
+	b.body = false
+	if MemoryInstance().Read(ptr+b.HLen(), b.dataLen)[0] == 1 {
+		b.body = true
+	}
+}
+
+func (b *Bool) Set(value interface{}) error {
+	data, ok := value.(bool)
+	if !ok {
+		return errors.New("value is not bool")
+	}
+	b.dataLen = 1
+	b.body = data
+	return nil
+}
+
+func (b *Bool) Get() interface{} {
+	return b.body
+}
+
+func (b *Bool) DataType() reflect.Type {
+	return reflect.TypeOf(b.body)
+}
