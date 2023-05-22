@@ -5,7 +5,7 @@ import (
 )
 
 type (
-	engine      func(code []byte, apis *HostAPIRegister) (out AspectRuntime, err error)
+	engine      func(code []byte, apis *HostAPIRegistry) (out AspectRuntime, err error)
 	RuntimeType int
 )
 
@@ -22,7 +22,7 @@ type AspectRuntime interface {
 }
 
 // NewAspectRuntime is the factory method for creating aspect runtime
-func NewAspectRuntime(runtimeType RuntimeType, code []byte, apis *HostAPIRegister) (AspectRuntime, error) {
+func NewAspectRuntime(runtimeType RuntimeType, code []byte, apis *HostAPIRegistry) (AspectRuntime, error) {
 	if runtimeType == WASM {
 		// only support wasm now
 		enginePool[runtimeType] = NewWASMTimeRuntime

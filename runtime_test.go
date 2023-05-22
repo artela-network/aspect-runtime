@@ -10,7 +10,7 @@ import (
 )
 
 // Helper: init hostAPI collection(@see type script impl :: declare)
-func addApis(hostApis *HostAPIRegister) {
+func addApis(hostApis *HostAPIRegistry) {
 	hostApis.AddApi("index", "test", "hello", func(arg string) string {
 		return "hello-" + arg + "-hello"
 	})
@@ -25,7 +25,7 @@ func TestCallEmptyStr(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
-	hostApis := NewHostAPIRegister()
+	hostApis := NewHostAPIRegistry()
 
 	var (
 		arg             string = ""
@@ -49,7 +49,7 @@ func TestCallNormal(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
-	hostApis := NewHostAPIRegister()
+	hostApis := NewHostAPIRegistry()
 
 	var (
 		arg             string = "abcd"
@@ -74,7 +74,7 @@ func TestCallMultiArgs(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
-	hostApis := NewHostAPIRegister()
+	hostApis := NewHostAPIRegistry()
 
 	var (
 		arg1            string = "bonjour"
@@ -101,7 +101,7 @@ func TestBytesNormal(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
-	hostApis := NewHostAPIRegister()
+	hostApis := NewHostAPIRegistry()
 
 	addApis(hostApis)
 

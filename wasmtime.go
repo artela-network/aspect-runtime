@@ -25,7 +25,7 @@ type wasmTimeRuntime struct {
 	ctx *rtypes.Context
 }
 
-func NewWASMTimeRuntime(code []byte, apis *HostAPIRegister) (out AspectRuntime, err error) {
+func NewWASMTimeRuntime(code []byte, apis *HostAPIRegistry) (out AspectRuntime, err error) {
 	watvm := &wasmTimeRuntime{engine: wasmtime.NewEngineWithConfig(defaultWASMTimeConfig())}
 	watvm.store = wasmtime.NewStore(watvm.engine)
 	watvm.module, err = wasmtime.NewModule(watvm.engine, code)
@@ -44,7 +44,7 @@ func NewWASMTimeRuntime(code []byte, apis *HostAPIRegister) (out AspectRuntime, 
 				item := wasmtime.WrapFunc(watvm.store, function)
 
 				// create linker with host function injected
-				if err = watvm.linker.Define(watvm.store, module, buildModuleMethod(ns, method), item); err != nil {
+				if err = watvm.linker.Define(watvm.store, buildModuleName(module), buildModuleMethod(ns, method), item); err != nil {
 					return nil, errors.Wrapf(err, "unable to link host api %s:%s.%s", module, ns, method)
 				}
 			}
@@ -56,15 +56,6 @@ func NewWASMTimeRuntime(code []byte, apis *HostAPIRegister) (out AspectRuntime, 
 		log.Debug("abort!")
 	})
 	if err = watvm.linker.Define(watvm.store, "env", "abort", abort); err != nil {
-		return nil, errors.Wrapf(err, "unable to link to abort")
-	}
-
-	// TODO, remove this, log function
-	log := wasmtime.WrapFunc(watvm.store, func(ptr int32) {
-		buf := watvm.instance.GetExport(watvm.store, ExpNameMemory).Memory().UnsafeData(watvm.store)
-		fmt.Println(string(buf[ptr : ptr+100]))
-	})
-	if err = watvm.linker.Define(watvm.store, "index", "test.log", log); err != nil {
 		return nil, errors.Wrapf(err, "unable to link to abort")
 	}
 
@@ -160,6 +151,10 @@ func defaultWASMTimeConfig() *wasmtime.Config {
 	return config
 }
 
-func buildModuleMethod(ns, method string) string {
+func buildModuleMethod(ns Namesapce, method MethodName) string {
 	return fmt.Sprintf("%s.%s", ns, method)
+}
+
+func buildModuleName(module Module) string {
+	return fmt.Sprintf("%s", module)
 }

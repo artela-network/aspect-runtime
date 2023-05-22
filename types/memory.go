@@ -13,7 +13,7 @@ func NewMemory(data func() []byte, alloc func(int32) (int32, error)) *Memory {
 }
 
 // Data return the whole linear memory.
-func (m Memory) Write(ptr int32, data []byte) {
+func (m *Memory) Write(ptr int32, data []byte) {
 	buf := m.data()
 	for i := 0; i < len(data); i++ {
 		buf[ptr] = data[i]
