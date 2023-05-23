@@ -1,4 +1,4 @@
-package runtime
+package runtimetypes
 
 import (
 	"reflect"
@@ -26,22 +26,22 @@ func NewByteArrary() *ByteArray {
 	}
 }
 
-func (b *ByteArray) Store() (int32, error) {
+func (b *ByteArray) Store(ctx *Context) (int32, error) {
 	size := b.HLen() + b.dataLen
-	ptr, err := MemoryInstance().alloc(size)
+	ptr, err := ctx.Memory().alloc(size)
 	if err != nil {
 		return 0, errors.Wrap(err, "alloc memory")
 	}
 
-	b.HStore(ptr)
-	MemoryInstance().Write(ptr+b.HLen(), b.body)
+	b.HStore(ctx, ptr)
+	ctx.Memory().Write(ptr+b.HLen(), b.body)
 
 	return ptr, nil
 }
 
-func (b *ByteArray) Load(ptr int32) {
-	b.TypeHeader.HLoad(ptr)
-	b.body = MemoryInstance().Read(ptr+b.HLen(), b.dataLen)
+func (b *ByteArray) Load(ctx *Context, ptr int32) {
+	b.TypeHeader.HLoad(ctx, ptr)
+	b.body = ctx.Memory().Read(ptr+b.HLen(), b.dataLen)
 }
 
 func (b *ByteArray) Set(value interface{}) error {
@@ -77,22 +77,22 @@ func NewString() *String {
 	}
 }
 
-func (s *String) Store() (int32, error) {
+func (s *String) Store(ctx *Context) (int32, error) {
 	size := s.HLen() + s.dataLen
-	ptr, err := MemoryInstance().alloc(size)
+	ptr, err := ctx.Memory().alloc(size)
 	if err != nil {
 		return 0, errors.Wrap(err, "alloc memory")
 	}
 
-	s.HStore(ptr)
-	MemoryInstance().Write(ptr+s.HLen(), []byte(s.body))
+	s.HStore(ctx, ptr)
+	ctx.Memory().Write(ptr+s.HLen(), []byte(s.body))
 
 	return ptr, nil
 }
 
-func (s *String) Load(ptr int32) {
-	s.TypeHeader.HLoad(ptr)
-	s.body = string(MemoryInstance().Read(ptr+s.HLen(), s.dataLen))
+func (s *String) Load(ctx *Context, ptr int32) {
+	s.TypeHeader.HLoad(ctx, ptr)
+	s.body = string(ctx.Memory().Read(ptr+s.HLen(), s.dataLen))
 }
 
 func (s *String) Set(value interface{}) error {
@@ -127,27 +127,27 @@ func NewBool() *Bool {
 	}
 }
 
-func (b *Bool) Store() (int32, error) {
+func (b *Bool) Store(ctx *Context) (int32, error) {
 	size := b.HLen() + b.dataLen
-	ptr, err := MemoryInstance().alloc(size)
+	ptr, err := ctx.Memory().alloc(size)
 	if err != nil {
 		return 0, errors.Wrap(err, "alloc memory")
 	}
 
-	b.HStore(ptr)
+	b.HStore(ctx, ptr)
 	data := byte(0)
 	if b.body {
 		data = byte(1)
 	}
-	MemoryInstance().Write(ptr+b.HLen(), []byte{data})
+	ctx.Memory().Write(ptr+b.HLen(), []byte{data})
 
 	return ptr, nil
 }
 
-func (b *Bool) Load(ptr int32) {
-	b.TypeHeader.HLoad(ptr)
+func (b *Bool) Load(ctx *Context, ptr int32) {
+	b.TypeHeader.HLoad(ctx, ptr)
 	b.body = false
-	if MemoryInstance().Read(ptr+b.HLen(), b.dataLen)[0] == 1 {
+	if ctx.Memory().Read(ptr+b.HLen(), b.dataLen)[0] == 1 {
 		b.body = true
 	}
 }

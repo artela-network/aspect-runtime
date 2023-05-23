@@ -1,18 +1,12 @@
-package runtime
+package runtimetypes
 
 type Memory struct {
 	data  func() []byte
 	alloc func(int32) (int32, error)
 }
 
-var globalMemory *Memory
-
-func MemoryInstance() *Memory {
-	return globalMemory
-}
-
-func NewMemory(data func() []byte, alloc func(int32) (int32, error)) {
-	globalMemory = &Memory{
+func NewMemory(data func() []byte, alloc func(int32) (int32, error)) *Memory {
+	return &Memory{
 		data:  data,
 		alloc: alloc,
 	}

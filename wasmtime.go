@@ -1,9 +1,10 @@
-package wasmtime
+package runtime
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/artela-network/runtime"
+	rtypes "github.com/artela-network/runtime/types"
 	"github.com/bytecodealliance/wasmtime-go/v7"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/pkg/errors"
@@ -21,10 +22,10 @@ type wasmTimeRuntime struct {
 	linker   *wasmtime.Linker
 	instance *wasmtime.Instance
 
-	memory *runtime.Memory
+	ctx *rtypes.Context
 }
 
-func NewWASMTimeRuntime(code []byte, apis *runtime.HostAPICollection) (out runtime.WASMRuntime, err error) {
+func NewWASMTimeRuntime(code []byte, apis *HostAPIRegistry) (out AspectRuntime, err error) {
 	watvm := &wasmTimeRuntime{engine: wasmtime.NewEngineWithConfig(defaultWASMTimeConfig())}
 	watvm.store = wasmtime.NewStore(watvm.engine)
 	watvm.module, err = wasmtime.NewModule(watvm.engine, code)
@@ -43,7 +44,7 @@ func NewWASMTimeRuntime(code []byte, apis *runtime.HostAPICollection) (out runti
 				item := wasmtime.WrapFunc(watvm.store, function)
 
 				// create linker with host function injected
-				if err = watvm.linker.Define(watvm.store, module, buildModuleMethod(ns, method), item); err != nil {
+				if err = watvm.linker.Define(watvm.store, buildModuleName(module), buildModuleMethod(ns, method), item); err != nil {
 					return nil, errors.Wrapf(err, "unable to link host api %s:%s.%s", module, ns, method)
 				}
 			}
@@ -58,37 +59,33 @@ func NewWASMTimeRuntime(code []byte, apis *runtime.HostAPICollection) (out runti
 		return nil, errors.Wrapf(err, "unable to link to abort")
 	}
 
-	// TODO, remove this, log function
-	log := wasmtime.WrapFunc(watvm.store, func(ptr int32) {
-		fmt.Println(string(watvm.memory.Read(ptr, 100)))
-	})
-	if err = watvm.linker.Define(watvm.store, "index", "test.log", log); err != nil {
-		return nil, errors.Wrapf(err, "unable to link to abort")
-	}
-
 	// instantiate module and store
 	if watvm.instance, err = watvm.linker.Instantiate(watvm.store, watvm.module); err != nil {
 		return nil, errors.Wrap(err, "unable to instantiate wasm module")
 	}
 
-	runtime.NewMemory(
-		func() []byte {
-			return watvm.instance.GetExport(watvm.store, ExpNameMemory).Memory().UnsafeData(watvm.store)
-		},
-		func(size int32) (int32, error) {
-			memoryAllocator := watvm.instance.GetFunc(watvm.store, "allocate")
-			if memoryAllocator == nil {
-				return 0, errors.Wrap(err, "unable to allocate memory in wasm")
-			}
+	watvm.ctx = rtypes.NewContext(
+		context.Background(),
+		rtypes.NewMemory(
+			func() []byte {
+				return watvm.instance.GetExport(watvm.store, ExpNameMemory).Memory().UnsafeData(watvm.store)
+			},
+			func(size int32) (int32, error) {
+				memoryAllocator := watvm.instance.GetFunc(watvm.store, "allocate")
+				if memoryAllocator == nil {
+					return 0, errors.Wrap(err, "unable to allocate memory in wasm")
+				}
 
-			res, err := memoryAllocator.Call(watvm.store, size)
-			if err != nil {
-				return 0, err
-			}
+				res, err := memoryAllocator.Call(watvm.store, size)
+				if err != nil {
+					return 0, err
+				}
 
-			return res.(int32), nil
-		},
+				return res.(int32), nil
+			},
+		),
 	)
+	apis.SetMemory(watvm.ctx.Memory())
 
 	return watvm, err
 }
@@ -103,15 +100,15 @@ func (w *wasmTimeRuntime) Call(method string, args ...interface{}) (interface{},
 	ptrs := make([]interface{}, len(args))
 	for i, arg := range args {
 		var err error
-		typeIndex := runtime.AssertType(arg)
-		rtType, ok := runtime.TypeObjectMapping[typeIndex]
+		typeIndex := rtypes.AssertType(arg)
+		rtType, ok := rtypes.TypeObjectMapping[typeIndex]
 		if !ok {
 			return nil, errors.Errorf("%v is not supported", arg)
 		}
 		if err := rtType.Set(arg); err != nil {
 			return nil, errors.Wrapf(err, "set argument %+v", arg)
 		}
-		ptrs[i], err = rtType.Store()
+		ptrs[i], err = rtType.Store(w.ctx)
 		if err != nil {
 			return "", errors.Wrapf(err, "write memory %+v", arg)
 		}
@@ -127,14 +124,14 @@ func (w *wasmTimeRuntime) Call(method string, args ...interface{}) (interface{},
 		return nil, errors.Errorf("read output failed, value: %s", val)
 	}
 
-	h := &runtime.TypeHeader{}
-	h.HLoad(ptr)
-	resType, ok := runtime.TypeObjectMapping[h.DataType()]
+	h := &rtypes.TypeHeader{}
+	h.HLoad(w.ctx, ptr)
+	resType, ok := rtypes.TypeObjectMapping[h.DataType()]
 	if !ok {
 		return nil, errors.Errorf("read param failed, type %d not found", resType)
 	}
 
-	resType.Load(ptr)
+	resType.Load(w.ctx, ptr)
 	return resType.Get(), nil
 }
 
@@ -154,6 +151,10 @@ func defaultWASMTimeConfig() *wasmtime.Config {
 	return config
 }
 
-func buildModuleMethod(ns, method string) string {
+func buildModuleMethod(ns Namesapce, method MethodName) string {
 	return fmt.Sprintf("%s.%s", ns, method)
+}
+
+func buildModuleName(module Module) string {
+	return fmt.Sprintf("%s", module)
 }

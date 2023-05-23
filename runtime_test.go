@@ -1,4 +1,4 @@
-package wasmtime
+package runtime
 
 import (
 	"os"
@@ -6,12 +6,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/artela-network/runtime"
 	"github.com/stretchr/testify/require"
 )
 
 // Helper: init hostAPI collection(@see type script impl :: declare)
-func addApis(hostApis *runtime.HostAPICollection) {
+func addApis(hostApis *HostAPIRegistry) {
 	hostApis.AddApi("index", "test", "hello", func(arg string) string {
 		return "hello-" + arg + "-hello"
 	})
@@ -24,18 +23,18 @@ func addApis(hostApis *runtime.HostAPICollection) {
 // Test Case: empty string arg for addApi and execute
 func TestCallEmptyStr(t *testing.T) {
 	cwd, _ := os.Getwd()
-	raw, _ := os.ReadFile(path.Join(cwd, "./testdata/runtime_test.wasm"))
+	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
-	hostApis := runtime.NewHostAPICollection()
+	hostApis := NewHostAPIRegistry()
 
 	var (
 		arg             string = ""
-		wasmTimeRuntime runtime.WASMRuntime
+		wasmTimeRuntime AspectRuntime
 		err             error
 	)
 	addApis(hostApis)
 
-	wasmTimeRuntime, err = NewWASMTimeRuntime(raw, hostApis)
+	wasmTimeRuntime, err = NewAspectRuntime(WASM, raw, hostApis)
 	require.Equal(t, nil, err)
 
 	{
@@ -48,18 +47,18 @@ func TestCallEmptyStr(t *testing.T) {
 // Test Case: normal case for addApi add and execute
 func TestCallNormal(t *testing.T) {
 	cwd, _ := os.Getwd()
-	raw, _ := os.ReadFile(path.Join(cwd, "./testdata/runtime_test.wasm"))
+	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
-	hostApis := runtime.NewHostAPICollection()
+	hostApis := NewHostAPIRegistry()
 
 	var (
 		arg             string = "abcd"
-		wasmTimeRuntime runtime.WASMRuntime
+		wasmTimeRuntime AspectRuntime
 		err             error
 	)
 	addApis(hostApis)
 
-	wasmTimeRuntime, err = NewWASMTimeRuntime(raw, hostApis)
+	wasmTimeRuntime, err = NewAspectRuntime(WASM, raw, hostApis)
 	require.Equal(t, nil, err)
 
 	{
@@ -73,21 +72,21 @@ func TestCallNormal(t *testing.T) {
 // Test Case: for multi args of addApi func and execute
 func TestCallMultiArgs(t *testing.T) {
 	cwd, _ := os.Getwd()
-	raw, _ := os.ReadFile(path.Join(cwd, "./testdata/runtime_test.wasm"))
+	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
-	hostApis := runtime.NewHostAPICollection()
+	hostApis := NewHostAPIRegistry()
 
 	var (
 		arg1            string = "bonjour"
 		arg2            string = "2"
 		arg3            string = "5"
-		wasmTimeRuntime runtime.WASMRuntime
+		wasmTimeRuntime AspectRuntime
 		err             error
 	)
 
 	addApis(hostApis)
 
-	wasmTimeRuntime, err = NewWASMTimeRuntime(raw, hostApis)
+	wasmTimeRuntime, err = NewAspectRuntime(WASM, raw, hostApis)
 	require.Equal(t, nil, err)
 
 	{
@@ -100,22 +99,45 @@ func TestCallMultiArgs(t *testing.T) {
 // Test Case: normal case for []byte as arg
 func TestBytesNormal(t *testing.T) {
 	cwd, _ := os.Getwd()
-	raw, _ := os.ReadFile(path.Join(cwd, "./testdata/runtime_test.wasm"))
+	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
-	hostApis := runtime.NewHostAPICollection()
+	hostApis := NewHostAPIRegistry()
 
 	addApis(hostApis)
 
 	var (
 		arg             []byte = []byte{0x1, 0x2, 0x3, 0x4}
-		wasmTimeRuntime runtime.WASMRuntime
+		wasmTimeRuntime AspectRuntime
 		err             error
 	)
 
-	wasmTimeRuntime, err = NewWASMTimeRuntime(raw, hostApis)
+	wasmTimeRuntime, err = NewAspectRuntime(WASM, raw, hostApis)
 	require.Equal(t, nil, err)
 	res, err := wasmTimeRuntime.Call("testBytes", arg)
 	require.Equal(t, nil, err)
 
 	require.Equal(t, true, reflect.DeepEqual([]byte{0x2, 0x3, 0x4, 0x5}, res.([]byte)))
+}
+
+// Test Case: nil case for []byte as arg
+func TestBytesNil(t *testing.T) {
+	cwd, _ := os.Getwd()
+	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
+
+	hostApis := NewHostAPIRegistry()
+
+	addApis(hostApis)
+
+	var (
+		arg             []byte = nil
+		wasmTimeRuntime AspectRuntime
+		err             error
+	)
+
+	wasmTimeRuntime, err = NewAspectRuntime(WASM, raw, hostApis)
+	require.Equal(t, nil, err)
+	res, err := wasmTimeRuntime.Call("testBytes", arg)
+	require.Equal(t, nil, err)
+
+	require.Equal(t, true, reflect.DeepEqual([]byte{}, res.([]byte)))
 }
