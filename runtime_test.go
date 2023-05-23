@@ -118,3 +118,26 @@ func TestBytesNormal(t *testing.T) {
 
 	require.Equal(t, true, reflect.DeepEqual([]byte{0x2, 0x3, 0x4, 0x5}, res.([]byte)))
 }
+
+// Test Case: nil case for []byte as arg
+func TestBytesNil(t *testing.T) {
+	cwd, _ := os.Getwd()
+	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
+
+	hostApis := NewHostAPIRegistry()
+
+	addApis(hostApis)
+
+	var (
+		arg             []byte = []byte{}
+		wasmTimeRuntime AspectRuntime
+		err             error
+	)
+
+	wasmTimeRuntime, err = NewAspectRuntime(WASM, raw, hostApis)
+	require.Equal(t, nil, err)
+	res, err := wasmTimeRuntime.Call("testBytes", arg)
+	require.Equal(t, nil, err)
+
+	require.Equal(t, true, reflect.DeepEqual([]byte{}, res.([]byte)))
+}
