@@ -129,7 +129,7 @@ func TestBytesNil(t *testing.T) {
 	addApis(hostApis)
 
 	var (
-		arg             []byte = []byte{}
+		arg             []byte = nil
 		wasmTimeRuntime AspectRuntime
 		err             error
 	)
