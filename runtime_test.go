@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"reflect"
@@ -140,4 +141,33 @@ func TestBytesNil(t *testing.T) {
 	require.Equal(t, nil, err)
 
 	require.Equal(t, true, reflect.DeepEqual([]byte{}, res.([]byte)))
+}
+
+// Test Case: long string as input/output params
+func TestLongString(t *testing.T) {
+	cwd, _ := os.Getwd()
+	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
+
+	hostApis := NewHostAPIRegistry()
+
+	var (
+		arg             string = ""
+		wasmTimeRuntime AspectRuntime
+		err             error
+	)
+	for i := 1; i <= 10000; i++ {
+		arg += fmt.Sprintf("%-6d", i)
+	}
+	addApis(hostApis)
+
+	wasmTimeRuntime, err = NewAspectRuntime(WASM, raw, hostApis)
+	require.Equal(t, nil, err)
+
+	{
+		res, err := wasmTimeRuntime.Call("greet", arg)
+		require.Equal(t, nil, err)
+		output := res.(string)
+
+		require.Equal(t, "hello-greet-"+arg+"-hello-greet", output)
+	}
 }
