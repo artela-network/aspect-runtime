@@ -56,20 +56,16 @@ func (header *TypeHeader) HStore(ctx *Context, ptr int32) {
 	t[1] = uint8(header.dataType >> 8)
 	ctx.memory.Write(ptr, t[:])
 
-	var l [4]byte
-	l[0] = uint8(header.dataLen)
-	l[1] = uint8(header.dataLen >> 8)
-	l[2] = uint8(header.dataLen >> 16)
-	l[3] = uint8(header.dataLen >> 24)
-	ctx.memory.Write(ptr+2, l[:])
+	l := int32ToBytes(header.dataLen)
+	ctx.memory.Write(ptr+2, l)
 }
 
 func (header *TypeHeader) HLoad(ctx *Context, ptr int32) {
 	t := ctx.memory.Read(ptr, 2)
 	header.dataType = int16(t[0]) + int16(t[1])<<8
 
-	l := ctx.memory.Read(ptr+2, 4)
-	header.dataLen = int32(l[0]) + int32(l[1])<<8 + int32(l[2])<<16 + int32(l[3])<<24
+	data := ctx.memory.Read(ptr+2, 4)
+	header.dataLen = bytesToInt32(data)
 }
 
 func (header *TypeHeader) HLen() int32 {
