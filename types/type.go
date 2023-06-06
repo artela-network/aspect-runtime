@@ -22,6 +22,7 @@ var TypeObjectMapping = map[TypeIndex]IType{
 	TypeByteArray: NewByteArrary(),
 	TypeString:    NewString(),
 	TypeBool:      NewBool(),
+	TypeInt32:     NewInt32(),
 }
 
 func AssertType(v interface{}) TypeIndex {
