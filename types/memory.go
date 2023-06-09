@@ -1,5 +1,7 @@
 package runtimetypes
 
+import "errors"
+
 type Memory struct {
 	data  func() []byte
 	alloc func(int32) (int32, error)
@@ -27,5 +29,13 @@ func (m *Memory) Read(ptr int32, size int32) []byte {
 
 // Allocate allocate a contiguous space on linear memory
 func (m *Memory) Allocate(size int32) (int32, error) {
-	return m.alloc(size)
+	ptr, err := m.alloc(size)
+	if err != nil {
+		return ptr, err
+	}
+
+	if ptr == 0 {
+		return ptr, errors.New("memory pointer is 0")
+	}
+	return ptr, nil
 }

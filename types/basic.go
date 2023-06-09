@@ -28,9 +28,9 @@ func NewByteArrary() *ByteArray {
 
 func (b *ByteArray) Store(ctx *Context) (int32, error) {
 	size := b.HLen() + b.dataLen
-	ptr, err := ctx.Memory().alloc(size)
+	ptr, err := ctx.Memory().Allocate(size)
 	if err != nil {
-		return 0, errors.Wrap(err, "alloc memory")
+		return 0, errors.Wrap(err, "allocate memory")
 	}
 
 	b.HStore(ctx, ptr)
@@ -79,9 +79,9 @@ func NewString() *String {
 
 func (s *String) Store(ctx *Context) (int32, error) {
 	size := s.HLen() + s.dataLen
-	ptr, err := ctx.Memory().alloc(size)
+	ptr, err := ctx.Memory().Allocate(size)
 	if err != nil {
-		return 0, errors.Wrap(err, "alloc memory")
+		return 0, errors.Wrap(err, "allocate memory")
 	}
 
 	s.HStore(ctx, ptr)
@@ -129,9 +129,9 @@ func NewBool() *Bool {
 
 func (b *Bool) Store(ctx *Context) (int32, error) {
 	size := b.HLen() + b.dataLen
-	ptr, err := ctx.Memory().alloc(size)
+	ptr, err := ctx.Memory().Allocate(size)
 	if err != nil {
-		return 0, errors.Wrap(err, "alloc memory")
+		return 0, errors.Wrap(err, "allocate memory")
 	}
 
 	b.HStore(ctx, ptr)
@@ -186,9 +186,9 @@ func NewInt32() *Int32 {
 
 func (i *Int32) Store(ctx *Context) (int32, error) {
 	size := i.HLen() + i.dataLen
-	ptr, err := ctx.Memory().alloc(size)
+	ptr, err := ctx.Memory().Allocate(size)
 	if err != nil {
-		return 0, errors.Wrap(err, "alloc memory")
+		return 0, errors.Wrap(err, "allocate memory")
 	}
 
 	i.HStore(ctx, ptr)
