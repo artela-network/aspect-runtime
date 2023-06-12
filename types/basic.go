@@ -28,9 +28,9 @@ func NewByteArrary() *ByteArray {
 
 func (b *ByteArray) Store(ctx *Context) (int32, error) {
 	size := b.HLen() + b.dataLen
-	ptr, err := ctx.Memory().alloc(size)
+	ptr, err := ctx.Memory().Allocate(size)
 	if err != nil {
-		return 0, errors.Wrap(err, "alloc memory")
+		return 0, errors.Wrap(err, "allocate memory")
 	}
 
 	b.HStore(ctx, ptr)
@@ -79,9 +79,9 @@ func NewString() *String {
 
 func (s *String) Store(ctx *Context) (int32, error) {
 	size := s.HLen() + s.dataLen
-	ptr, err := ctx.Memory().alloc(size)
+	ptr, err := ctx.Memory().Allocate(size)
 	if err != nil {
-		return 0, errors.Wrap(err, "alloc memory")
+		return 0, errors.Wrap(err, "allocate memory")
 	}
 
 	s.HStore(ctx, ptr)
@@ -129,9 +129,9 @@ func NewBool() *Bool {
 
 func (b *Bool) Store(ctx *Context) (int32, error) {
 	size := b.HLen() + b.dataLen
-	ptr, err := ctx.Memory().alloc(size)
+	ptr, err := ctx.Memory().Allocate(size)
 	if err != nil {
-		return 0, errors.Wrap(err, "alloc memory")
+		return 0, errors.Wrap(err, "allocate memory")
 	}
 
 	b.HStore(ctx, ptr)
@@ -168,4 +168,56 @@ func (b *Bool) Get() interface{} {
 
 func (b *Bool) DataType() reflect.Type {
 	return reflect.TypeOf(b.body)
+}
+
+type Int32 struct {
+	TypeHeader
+
+	body int32
+}
+
+func NewInt32() *Int32 {
+	return &Int32{
+		TypeHeader: TypeHeader{
+			dataType: int16(TypeInt32),
+		},
+	}
+}
+
+func (i *Int32) Store(ctx *Context) (int32, error) {
+	size := i.HLen() + i.dataLen
+	ptr, err := ctx.Memory().Allocate(size)
+	if err != nil {
+		return 0, errors.Wrap(err, "allocate memory")
+	}
+
+	i.HStore(ctx, ptr)
+	data := int32ToBytes(i.body)
+	ctx.Memory().Write(ptr+i.HLen(), data)
+
+	return ptr, nil
+}
+
+func (i *Int32) Load(ctx *Context, ptr int32) {
+	i.TypeHeader.HLoad(ctx, ptr)
+	data := ctx.Memory().Read(ptr+i.HLen(), i.dataLen)
+	i.body = bytesToInt32(data)
+}
+
+func (i *Int32) Set(value interface{}) error {
+	data, ok := value.(int32)
+	if !ok {
+		return errors.New("value is not bool")
+	}
+	i.dataLen = 4
+	i.body = data
+	return nil
+}
+
+func (i *Int32) Get() interface{} {
+	return i.body
+}
+
+func (i *Int32) DataType() reflect.Type {
+	return reflect.TypeOf(i.body)
 }

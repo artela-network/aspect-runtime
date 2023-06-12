@@ -29,3 +29,15 @@ Aspect runtime is a runtime platform for executing aspects. It is a wrapper arou
     // handle the output
     ...
     ```
+3. Use the pool.
+    <br/>To establish a runtime pool with a specific capacity, the pool is designed to cache and provide runtime instances based on their type, bytecode, and host functions.
+    The `preRun` function is invoked before returning the instance and serves the purpose of clearing any variables or data from the previous run.
+    ```
+    capacity := 10
+	pool := NewRuntimePool(capacity)
+
+    forceClearCache := false
+    preRun := "resetFn"
+    wasmTimeRuntime, err := pool.Runtime(WASM, raw, hostFns, forceClearCache, "resetFn")
+
+    ```

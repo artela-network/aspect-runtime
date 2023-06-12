@@ -161,7 +161,7 @@ export function greet2(ptr1: i32, ptr2: i32, ptr3: i32): i32 {
     let helloRetPtr = test.hello2(helloArg1, helloArg2, helloArg3)
     let helloRet = new AString();
     helloRet.load(helloRetPtr);
-    
+
     let retAs = new AString();
     retAs.set(helloRet.get() + "-over");
     let retPtr = retAs.store();
@@ -180,6 +180,13 @@ export function testBytes(ptr: i32): i32 {
     return res.store();
 }
 
+let sum = 0;
+export function testIncrease(): i32 {
+    sum = sum + 10;
+    let retAs = new AString();
+    retAs.set(sum.toString());
+    return retAs.store();
+}
 
 export function allocate(size: i32): i32 {
     return heap.alloc(size) as i32;
