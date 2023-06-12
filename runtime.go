@@ -19,6 +19,14 @@ func NewRuntimePool(capacity int) *RuntimePool {
 	}
 }
 
+func (pool *RuntimePool) Capacity() int {
+	return pool.cap
+}
+
+func (pool *RuntimePool) len() int {
+	return len(pool.engines)
+}
+
 // The Runtime retrieves an aspect runtime from the pool.
 // The key used to access the pool is the hash value obtained from combining the runtimeType, code, and APIs.
 //
