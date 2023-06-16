@@ -15,32 +15,65 @@ func Wrappers(ctx *rtypes.Context, fn interface{}) (interface{}, error) {
 		return nil, errNotSupport
 	}
 
-	switch t.NumIn() {
-	case 0:
-		return func() int32 {
-			return executeWrapper(ctx, fn)
-		}, nil
+	if t.NumOut() == 0 {
+		switch t.NumIn() {
+		case 0:
+			return func() {
+				executeWrapper(ctx, fn)
+			}, nil
 
-	case 1:
-		return func(arg int32) int32 {
-			return executeWrapper(ctx, fn, arg)
-		}, nil
+		case 1:
+			return func(arg int32) {
+				executeWrapper(ctx, fn, arg)
+			}, nil
 
-	case 2:
-		return func(arg1 int32, arg2 int32) int32 {
-			return executeWrapper(ctx, fn, arg1, arg2)
-		}, nil
+		case 2:
+			return func(arg1 int32, arg2 int32) {
+				executeWrapper(ctx, fn, arg1, arg2)
+			}, nil
 
-	case 3:
-		return func(arg1 int32, arg2 int32, arg3 int32) int32 {
-			return executeWrapper(ctx, fn, arg1, arg2, arg3)
-		}, nil
+		case 3:
+			return func(arg1 int32, arg2 int32, arg3 int32) {
+				executeWrapper(ctx, fn, arg1, arg2, arg3)
+			}, nil
+		}
+	} else {
+		switch t.NumIn() {
+		case 0:
+			return func() int32 {
+				return executeWrapperAndReturn(ctx, fn)
+			}, nil
+
+		case 1:
+			return func(arg int32) int32 {
+				return executeWrapperAndReturn(ctx, fn, arg)
+			}, nil
+
+		case 2:
+			return func(arg1 int32, arg2 int32) int32 {
+				return executeWrapperAndReturn(ctx, fn, arg1, arg2)
+			}, nil
+
+		case 3:
+			return func(arg1 int32, arg2 int32, arg3 int32) int32 {
+				return executeWrapperAndReturn(ctx, fn, arg1, arg2, arg3)
+			}, nil
+		}
 	}
 
 	return nil, errNotSupport
 }
 
-func executeWrapper(ctx *rtypes.Context, fn interface{}, ptrs ...int32) int32 {
+func executeWrapper(ctx *rtypes.Context, fn interface{}, ptrs ...int32) {
+	args, err := paramsRead(ctx, ptrs...)
+	if err != nil {
+		log.Fatal("read params:", err)
+	}
+	v := reflect.ValueOf(fn)
+	v.Call(args)
+}
+
+func executeWrapperAndReturn(ctx *rtypes.Context, fn interface{}, ptrs ...int32) int32 {
 	args, err := paramsRead(ctx, ptrs...)
 	if err != nil {
 		log.Fatal("read params:", err)
@@ -82,7 +115,7 @@ func paramsWrite(ctx *rtypes.Context, values []reflect.Value) (int32, error) {
 		retIndex := rtypes.AssertType(values[0].Interface())
 		resType, ok := rtypes.TypeObjectMapping[retIndex]
 		if !ok {
-			return 0, errors.Errorf("%v is not supported", values[0])
+			return 0, errors.Errorf("%v is not supported", values[0].Interface())
 		}
 		resType.Set(values[0].Interface())
 		ptr, err := resType.Store(ctx)

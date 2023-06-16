@@ -4,6 +4,7 @@ export declare namespace test {
     function hello(ptr: i32): i32
     function hello2(ptr1: i32, ptr2: i32, ptr3: i32): i32
     function log(s: string): void
+    function hello3(ptr: i32): void
 }
 
 enum typeIndex {
@@ -166,6 +167,18 @@ export function greet2(ptr1: i32, ptr2: i32, ptr3: i32): i32 {
     retAs.set(helloRet.get() + "-over");
     let retPtr = retAs.store();
     return retPtr;
+}
+
+export function greet3(ptr: i32): i32 {
+    let req = new AString();
+    req.load(ptr);
+    let helloReq1 = new AString();
+    helloReq1.set("greet3-" + req.get());
+    let helloptr = helloReq1.store();
+    test.hello3(helloptr);
+    let out = new AString();
+    out.set("greet3");
+    return out.store();
 }
 
 export function testBytes(ptr: i32): i32 {
