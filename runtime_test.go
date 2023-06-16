@@ -12,13 +12,16 @@ import (
 )
 
 // Helper: init hostAPI collection(@see type script impl :: declare)
-func addApis(hostApis *HostAPIRegistry) {
+func addApis(t *testing.T, hostApis *HostAPIRegistry) {
 	hostApis.AddApi("index", "test", "hello", func(arg string) string {
 		return "hello-" + arg + "-hello"
 	})
 	hostApis.AddApi("index", "test", "hello2", func(arg1 string, arg2 string, arg3 string) string {
 		tmp := arg2 + arg3
 		return arg1 + "-" + tmp
+	})
+	hostApis.AddApi("index", "test", "hello3", func(arg string) {
+		require.Equal(t, "greet3-hello", arg)
 	})
 }
 
@@ -34,7 +37,7 @@ func TestCallEmptyStr(t *testing.T) {
 		wasmTimeRuntime AspectRuntime
 		err             error
 	)
-	addApis(hostApis)
+	addApis(t, hostApis)
 
 	wasmTimeRuntime, err = NewAspectRuntime(WASM, raw, hostApis)
 	require.Equal(t, nil, err)
@@ -58,7 +61,7 @@ func TestCallNormal(t *testing.T) {
 		wasmTimeRuntime AspectRuntime
 		err             error
 	)
-	addApis(hostApis)
+	addApis(t, hostApis)
 
 	wasmTimeRuntime, err = NewAspectRuntime(WASM, raw, hostApis)
 	require.Equal(t, nil, err)
@@ -86,7 +89,7 @@ func TestCallMultiArgs(t *testing.T) {
 		err             error
 	)
 
-	addApis(hostApis)
+	addApis(t, hostApis)
 
 	wasmTimeRuntime, err = NewAspectRuntime(WASM, raw, hostApis)
 	require.Equal(t, nil, err)
@@ -105,7 +108,7 @@ func TestBytesNormal(t *testing.T) {
 
 	hostApis := NewHostAPIRegistry()
 
-	addApis(hostApis)
+	addApis(t, hostApis)
 
 	var (
 		arg             []byte = []byte{0x1, 0x2, 0x3, 0x4}
@@ -121,6 +124,28 @@ func TestBytesNormal(t *testing.T) {
 	require.Equal(t, true, reflect.DeepEqual([]byte{0x2, 0x3, 0x4, 0x5}, res.([]byte)))
 }
 
+func TestCallHostApiNoReturn(t *testing.T) {
+	cwd, _ := os.Getwd()
+	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
+
+	hostApis := NewHostAPIRegistry()
+
+	addApis(t, hostApis)
+
+	var (
+		arg             string = "hello"
+		wasmTimeRuntime AspectRuntime
+		err             error
+	)
+
+	wasmTimeRuntime, err = NewAspectRuntime(WASM, raw, hostApis)
+	require.Equal(t, nil, err)
+	res, err := wasmTimeRuntime.Call("greet3", arg)
+	require.Equal(t, nil, err)
+
+	require.Equal(t, "greet3", res.(string))
+}
+
 // Test Case: nil case for []byte as arg
 func TestBytesNil(t *testing.T) {
 	cwd, _ := os.Getwd()
@@ -128,7 +153,7 @@ func TestBytesNil(t *testing.T) {
 
 	hostApis := NewHostAPIRegistry()
 
-	addApis(hostApis)
+	addApis(t, hostApis)
 
 	var (
 		arg             []byte = nil
@@ -159,7 +184,7 @@ func TestLongString(t *testing.T) {
 	for i := 1; i <= 10000; i++ {
 		arg += fmt.Sprintf("%-6d", i)
 	}
-	addApis(hostApis)
+	addApis(t, hostApis)
 
 	wasmTimeRuntime, err = NewAspectRuntime(WASM, raw, hostApis)
 	require.Equal(t, nil, err)
@@ -179,7 +204,7 @@ func TestCallNormalWithPool(t *testing.T) {
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
 	hostApis := NewHostAPIRegistry()
-	addApis(hostApis)
+	addApis(t, hostApis)
 
 	pool := NewRuntimePool(10)
 
