@@ -26,7 +26,7 @@ func TestCallNormalWithPool(t *testing.T) {
 		require.Equal(t, nil, err)
 
 		require.Equal(t, strconv.Itoa((i+1)*10), res.(string))
-		pool.PutBack(key, wasmTimeRuntime)
+		pool.Return(key, wasmTimeRuntime)
 	}
 }
 
@@ -45,7 +45,7 @@ func TestCallNormalWithPool2(t *testing.T) {
 		require.Equal(t, nil, err)
 
 		require.Equal(t, strconv.Itoa(10), res.(string))
-		pool.PutBack(key, wasmTimeRuntime)
+		pool.Return(key, wasmTimeRuntime)
 
 		expectLen := i + 1
 		if i >= 10 {

@@ -19,7 +19,8 @@ type (
 		sync.Mutex
 
 		capacity int
-		// list.Value = AspectRuntime
+
+		// list.Value = &entry
 		keys *list.List
 
 		// key: hash of args to build the AspectRuntime
@@ -48,7 +49,7 @@ func (pool *RuntimePool) RuntimeForceRefresh(rtType RuntimeType, code []byte, ap
 	return pool.get(rtType, code, apis, true, preRun...)
 }
 
-// Get retrieves an aspect runtime from the pool.
+// Runtime retrieves an aspect runtime from the pool.
 // The key used to access the pool is the hash value obtained from combining the runtimeType, code, and APIs.
 //
 // If the aspect runtime does not exist in the pool, a new runtime is created and cached in the pool.
@@ -59,8 +60,8 @@ func (pool *RuntimePool) Runtime(rtType RuntimeType, code []byte, apis *HostAPIR
 	return pool.get(rtType, code, apis, false, preRun...)
 }
 
-// PutBack return a runtime to the pool
-func (pool *RuntimePool) PutBack(key string, runtime AspectRuntime) {
+// Return returns a runtime to the pool
+func (pool *RuntimePool) Return(key string, runtime AspectRuntime) {
 	pool.Lock()
 	defer pool.Unlock()
 
