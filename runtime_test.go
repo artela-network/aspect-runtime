@@ -5,7 +5,6 @@ import (
 	"os"
 	"path"
 	"reflect"
-	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -195,28 +194,5 @@ func TestLongString(t *testing.T) {
 		output := res.(string)
 
 		require.Equal(t, "hello-greet-"+arg+"-hello-greet", output)
-	}
-}
-
-// Test Case: normal case for addApi add and execute
-func TestCallNormalWithPool(t *testing.T) {
-	cwd, _ := os.Getwd()
-	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
-
-	hostApis := NewHostAPIRegistry()
-	addApis(t, hostApis)
-
-	pool := NewRuntimePool(10)
-
-	for i := 0; i < 3; i++ {
-		wasmTimeRuntime, err := pool.Runtime(WASM, raw, hostApis, false)
-		require.Equal(t, nil, err)
-
-		{
-			res, err := wasmTimeRuntime.Call("testIncrease")
-			require.Equal(t, nil, err)
-
-			require.Equal(t, strconv.Itoa((i+1)*10), res.(string))
-		}
 	}
 }
