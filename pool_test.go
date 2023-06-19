@@ -51,8 +51,6 @@ func TestCallNormalWithPool2(t *testing.T) {
 		if i >= 10 {
 			expectLen = 10
 		}
-		if i <= 10 {
-			require.Equal(t, expectLen, pool.Len())
-		}
+		require.Equal(t, expectLen, pool.Len())
 	}
 }
