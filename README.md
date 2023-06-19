@@ -36,8 +36,11 @@ Aspect runtime is a runtime platform for executing aspects. It is a wrapper arou
     capacity := 10
 	pool := NewRuntimePool(capacity)
 
-    forceClearCache := false
     preRun := "resetFn"
-    wasmTimeRuntime, err := pool.Runtime(WASM, raw, hostFns, forceClearCache, "resetFn")
+    key, wasmTimeRuntime, err := pool.Runtime(WASM, raw, hostFns, forceClearCache, "resetFn")
 
+    ```
+    After using the runtime instance from the pool, it is important to put it back into the pool. Failing to do so would result in the instance being unavailable for subsequent calls that require the same instance.
+    ```
+    pool.PutBack(key, wasmTimeRuntime)
     ```
