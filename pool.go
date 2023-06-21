@@ -45,19 +45,16 @@ func (pool *RuntimePool) Len() int {
 }
 
 // RuntimeForceRefresh create a new AspectRuntime and force to refresh of runtime pool
-func (pool *RuntimePool) RuntimeForceRefresh(rtType RuntimeType, code []byte, apis *HostAPIRegistry, preRun ...string) (string, AspectRuntime, error) {
-	return pool.get(rtType, code, apis, true, preRun...)
+func (pool *RuntimePool) RuntimeForceRefresh(rtType RuntimeType, code []byte, apis *HostAPIRegistry) (string, AspectRuntime, error) {
+	return pool.get(rtType, code, apis, true)
 }
 
 // Runtime retrieves an aspect runtime from the pool.
 // The key used to access the pool is the hash value obtained from combining the runtimeType, code, and APIs.
 //
 // If the aspect runtime does not exist in the pool, a new runtime is created and cached in the pool.
-//
-// The preRun parameter refers to the function names used to clear the memory of the previous run, or something else.
-// If preRun executes failed, it will continue to create a new runtime and cache in the pool.
-func (pool *RuntimePool) Runtime(rtType RuntimeType, code []byte, apis *HostAPIRegistry, preRun ...string) (string, AspectRuntime, error) {
-	return pool.get(rtType, code, apis, false, preRun...)
+func (pool *RuntimePool) Runtime(rtType RuntimeType, code []byte, apis *HostAPIRegistry) (string, AspectRuntime, error) {
+	return pool.get(rtType, code, apis, false)
 }
 
 // Return returns a runtime to the pool
@@ -80,31 +77,22 @@ func (pool *RuntimePool) Return(key string, runtime AspectRuntime) {
 	pool.add(key, runtime)
 }
 
-// TODO reset memory instead of pssing preRun.
-func (pool *RuntimePool) get(rtType RuntimeType, code []byte, apis *HostAPIRegistry, forceRefresh bool, preRun ...string) (string, AspectRuntime, error) {
+func (pool *RuntimePool) get(rtType RuntimeType, code []byte, apis *HostAPIRegistry, forceRefresh bool) (string, AspectRuntime, error) {
 	pool.Lock()
 	defer pool.Unlock()
 
 	hash := hashOfRuntimeArgs(rtType, code, apis)
 	elem, ok := pool.cache[hash]
 	if ok {
-		rt := elem.Value.(*entry).runtime
-
-		preRunOK := true
-		if !forceRefresh {
-			for _, pr := range preRun {
-				_, err := rt.Call(pr)
-				if err != nil {
-					preRunOK = false
-					break
-				}
-			}
-		}
-		// remove from the pool, ignore it is borrowed or removed.
+		// remove from the pool, either it is borrowed or removed.
 		pool.remove(hash, elem)
 
-		if preRunOK {
-			return hash, rt, nil
+		if !forceRefresh {
+			rt := elem.Value.(*entry).runtime
+			if err := rt.ResetStore(); err == nil {
+				return hash, rt, nil
+			}
+			// if call reset failed, continue to create a new one
 		}
 	}
 

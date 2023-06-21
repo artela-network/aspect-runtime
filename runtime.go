@@ -19,6 +19,7 @@ var (
 
 type AspectRuntime interface {
 	Call(method string, args ...interface{}) (interface{}, error)
+	ResetStore() error
 }
 
 // NewAspectRuntime is the factory method for creating aspect runtime
