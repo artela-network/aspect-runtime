@@ -220,8 +220,6 @@ func defaultWASMTimeConfig() *wasmtime.Config {
 	config.SetCraneliftOptLevel(wasmtime.OptLevelSpeedAndSize)
 	// disable multi-memory by default
 	config.SetWasmMultiMemory(false)
-	// enable debug mode for now
-	config.SetDebugInfo(true)
 
 	return config
 }
