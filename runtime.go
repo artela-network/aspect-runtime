@@ -19,6 +19,7 @@ var (
 
 type AspectRuntime interface {
 	Call(method string, args ...interface{}) (interface{}, error)
+	Destroy()
 	ResetStore() error
 }
 

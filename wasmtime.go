@@ -140,6 +140,11 @@ func (w *wasmTimeRuntime) ResetStore() (err error) {
 	return nil
 }
 
+func (w *wasmTimeRuntime) Destroy() {
+	w.apis.SetMemory(nil)
+	w.apis = nil
+}
+
 func (w *wasmTimeRuntime) linkToHostFns() error {
 	for module, namespaces := range w.apis.WrapperFuncs() {
 		for ns, methods := range namespaces {
