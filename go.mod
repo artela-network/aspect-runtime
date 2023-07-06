@@ -3,11 +3,10 @@ module github.com/artela-network/runtime
 go 1.20
 
 require (
-	github.com/bytecodealliance/wasmtime-go/v7 v7.0.0
+	github.com/bytecodealliance/wasmtime-go/v9 v9.0.0
 	github.com/ethereum/go-ethereum v1.11.6
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.2
-	google.golang.org/protobuf v1.28.1
 )
 
 require (
