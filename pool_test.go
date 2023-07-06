@@ -11,6 +11,7 @@ import (
 )
 
 // Test Case: normal case for addApi add and execute
+// Same hostapi instance
 func TestCallNormalWithPool(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
@@ -35,6 +36,7 @@ func TestCallNormalWithPool(t *testing.T) {
 	}
 }
 
+// Different hostapi instance
 func TestCallNormalWithPool2(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
@@ -52,11 +54,7 @@ func TestCallNormalWithPool2(t *testing.T) {
 		require.Equal(t, "10", res.(string))
 		pool.Return(key, wasmTimeRuntime)
 
-		expectLen := i + 1
-		if i >= 10 {
-			expectLen = 10
-		}
-		require.Equal(t, expectLen, pool.Len())
+		require.Equal(t, 1, pool.Len())
 	}
 }
 

@@ -27,6 +27,7 @@ Aspect runtime is a runtime platform for executing aspects. It is a wrapper arou
     }
     output = res.(string) // string is expected
     // handle the output
+    wasmTimeRuntime.Destroy() // to destroy the rt, in case of go runtime gc failed
     ...
     ```
 3. Use the pool.

@@ -19,7 +19,8 @@ var (
 
 type AspectRuntime interface {
 	Call(method string, args ...interface{}) (interface{}, error)
-	ResetStore() error
+	Destroy()
+	ResetStore(apis *HostAPIRegistry) error
 }
 
 // NewAspectRuntime is the factory method for creating aspect runtime

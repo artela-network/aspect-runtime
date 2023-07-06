@@ -5,13 +5,14 @@ import (
 	"fmt"
 
 	rtypes "github.com/artela-network/runtime/types"
-	"github.com/bytecodealliance/wasmtime-go/v7"
+	"github.com/bytecodealliance/wasmtime-go/v9"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/pkg/errors"
 )
 
 const (
 	ExpNameMemory = "memory"
+	MaxMemorySize = 32 * 1024 * 1024
 )
 
 // wasmTimeRuntime is a wrapper for WASMTime runtime
@@ -29,8 +30,12 @@ type wasmTimeRuntime struct {
 func NewWASMTimeRuntime(code []byte, apis *HostAPIRegistry) (out AspectRuntime, err error) {
 	watvm := &wasmTimeRuntime{engine: wasmtime.NewEngineWithConfig(defaultWASMTimeConfig())}
 	watvm.store = wasmtime.NewStore(watvm.engine)
+	// limit memory size to 32MB for now
+	watvm.store.Limiter(MaxMemorySize, -1, -1, -1, -1)
+
 	watvm.module, err = wasmtime.NewModule(watvm.engine, code)
 	if err != nil {
+		log.Error("failed to create wasm module", "err", err, "size", len(code))
 		return nil, errors.Wrap(err, "unable create wasm module")
 	}
 
@@ -106,11 +111,12 @@ func (w *wasmTimeRuntime) Call(method string, args ...interface{}) (interface{},
 }
 
 // ResetStore reset the whole memory of wasm
-func (w *wasmTimeRuntime) ResetStore() (err error) {
+func (w *wasmTimeRuntime) ResetStore(apis *HostAPIRegistry) (err error) {
 	w.store = wasmtime.NewStore(w.engine)
 
 	w.linker = wasmtime.NewLinker(w.engine)
 
+	w.apis = apis
 	// reset link all host apis with new store
 	if err := w.linkToHostFns(); err != nil {
 		return err
@@ -133,6 +139,11 @@ func (w *wasmTimeRuntime) ResetStore() (err error) {
 	w.apis.SetMemory(w.ctx.Memory())
 
 	return nil
+}
+
+func (w *wasmTimeRuntime) Destroy() {
+	w.apis.SetMemory(nil)
+	w.apis = nil
 }
 
 func (w *wasmTimeRuntime) linkToHostFns() error {
@@ -207,6 +218,8 @@ func defaultWASMTimeConfig() *wasmtime.Config {
 	config.SetWasmMultiValue(true)
 	// need to run benchmarks on this and adjust later
 	config.SetCraneliftOptLevel(wasmtime.OptLevelSpeedAndSize)
+	// disable multi-memory by default
+	config.SetWasmMultiMemory(false)
 
 	return config
 }
