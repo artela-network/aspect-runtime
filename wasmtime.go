@@ -210,12 +210,15 @@ func defaultWASMTimeConfig() *wasmtime.Config {
 	config.SetWasmThreads(false)
 	// multi-value return is useful, should be enabled
 	config.SetWasmMultiValue(true)
-	// need to run benchmarks on this and adjust later
-	config.SetCraneliftOptLevel(wasmtime.OptLevelSpeedAndSize)
+	// use the default strategy for now, disable cranelift jit
+	config.SetStrategy(wasmtime.StrategyAuto)
 	// disable multi-memory by default
 	config.SetWasmMultiMemory(false)
 	// enable debug mode for now
 	config.SetDebugInfo(true)
+	// disable cranelift jit for now
+	// config.SetStrategy(wasmtime.StrategyCranelift)
+	// config.SetCraneliftOptLevel(wasmtime.OptLevelSpeedAndSize)
 
 	return config
 }
