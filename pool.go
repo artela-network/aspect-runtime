@@ -62,6 +62,9 @@ func (pool *RuntimePool) Return(key string, runtime AspectRuntime) {
 	pool.Lock()
 	defer pool.Unlock()
 
+	// free the hostapis and ctx injected to types, in case that go runtime GC failed
+	runtime.Destroy()
+
 	if elem, ok := pool.cache[key]; ok {
 		pool.keys.MoveToFront(elem)
 		return
@@ -81,7 +84,7 @@ func (pool *RuntimePool) get(rtType RuntimeType, code []byte, apis *HostAPIRegis
 	pool.Lock()
 	defer pool.Unlock()
 
-	hash := hashOfRuntimeArgs(rtType, code, apis)
+	hash := hashOfRuntimeArgs(rtType, code)
 	elem, ok := pool.cache[hash]
 	if ok {
 		// remove from the pool, either it is borrowed or removed.
@@ -89,7 +92,7 @@ func (pool *RuntimePool) get(rtType RuntimeType, code []byte, apis *HostAPIRegis
 
 		if !forceRefresh {
 			rt := elem.Value.(*entry).runtime
-			if err := rt.ResetStore(); err == nil {
+			if err := rt.ResetStore(apis); err == nil {
 				return hash, rt, nil
 			}
 			// if call reset failed, continue to create a new one
@@ -115,8 +118,8 @@ func (pool *RuntimePool) add(key string, runtime AspectRuntime) {
 	pool.cache[key] = new
 }
 
-func hashOfRuntimeArgs(runtimeType RuntimeType, code []byte, apis *HostAPIRegistry) string {
-	return hex.EncodeToString(hash(runtimeType, code, apis))
+func hashOfRuntimeArgs(runtimeType RuntimeType, code []byte) string {
+	return hex.EncodeToString(hash(runtimeType, code))
 }
 
 func hash(objs ...interface{}) []byte {

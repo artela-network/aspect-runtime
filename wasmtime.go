@@ -111,11 +111,12 @@ func (w *wasmTimeRuntime) Call(method string, args ...interface{}) (interface{},
 }
 
 // ResetStore reset the whole memory of wasm
-func (w *wasmTimeRuntime) ResetStore() (err error) {
+func (w *wasmTimeRuntime) ResetStore(apis *HostAPIRegistry) (err error) {
 	w.store = wasmtime.NewStore(w.engine)
 
 	w.linker = wasmtime.NewLinker(w.engine)
 
+	w.apis = apis
 	// reset link all host apis with new store
 	if err := w.linkToHostFns(); err != nil {
 		return err

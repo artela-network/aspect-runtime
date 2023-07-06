@@ -46,6 +46,7 @@ func TestCallEmptyStr(t *testing.T) {
 		require.Equal(t, nil, err)
 		require.Equal(t, "hello-greet--hello-greet", res.(string))
 	}
+	wasmTimeRuntime.Destroy() // to destroy the rt, in case of memory leak
 }
 
 // Test Case: normal case for addApi add and execute
@@ -71,6 +72,7 @@ func TestCallNormal(t *testing.T) {
 
 		require.Equal(t, "hello-greet-abcd-hello-greet", res.(string))
 	}
+	wasmTimeRuntime.Destroy() // to destroy the rt, in case of memory leak
 }
 
 // Test Case: for multi args of addApi func and execute
@@ -98,6 +100,7 @@ func TestCallMultiArgs(t *testing.T) {
 		require.Equal(t, nil, err)
 		require.Equal(t, "bonjour-25-over", res.(string))
 	}
+	wasmTimeRuntime.Destroy() // to destroy the rt, in case of memory leak
 }
 
 // Test Case: normal case for []byte as arg
@@ -121,6 +124,7 @@ func TestBytesNormal(t *testing.T) {
 	require.Equal(t, nil, err)
 
 	require.Equal(t, true, reflect.DeepEqual([]byte{0x2, 0x3, 0x4, 0x5}, res.([]byte)))
+	wasmTimeRuntime.Destroy() // to destroy the rt, in case of memory leak
 }
 
 func TestCallHostApiNoReturn(t *testing.T) {
@@ -143,6 +147,7 @@ func TestCallHostApiNoReturn(t *testing.T) {
 	require.Equal(t, nil, err)
 
 	require.Equal(t, "greet3", res.(string))
+	wasmTimeRuntime.Destroy() // to destroy the rt, in case of memory leak
 }
 
 // Test Case: nil case for []byte as arg
@@ -166,6 +171,7 @@ func TestBytesNil(t *testing.T) {
 	require.Equal(t, nil, err)
 
 	require.Equal(t, true, reflect.DeepEqual([]byte{}, res.([]byte)))
+	wasmTimeRuntime.Destroy() // to destroy the rt, in case of memory leak
 }
 
 // Test Case: long string as input/output params
@@ -195,4 +201,5 @@ func TestLongString(t *testing.T) {
 
 		require.Equal(t, "hello-greet-"+arg+"-hello-greet", output)
 	}
+	wasmTimeRuntime.Destroy() // to destroy the rt, in case of memory leak
 }
