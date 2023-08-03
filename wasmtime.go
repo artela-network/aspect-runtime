@@ -11,8 +11,10 @@ import (
 )
 
 const (
-	ExpNameMemory = "memory"
-	MaxMemorySize = 32 * 1024 * 1024
+	ExpNameMemory      = "memory"
+	MaxMemorySize      = 32 * 1024 * 1024
+	MaxMemoryPages     = 100
+	DefaultMemoryPages = 1
 )
 
 // wasmTimeRuntime is a wrapper for WASMTime runtime
@@ -22,6 +24,7 @@ type wasmTimeRuntime struct {
 	module   *wasmtime.Module
 	linker   *wasmtime.Linker
 	instance *wasmtime.Instance
+	memory   *wasmtime.Memory
 
 	ctx  *rtypes.Context
 	apis *HostAPIRegistry
@@ -52,6 +55,12 @@ func NewWASMTimeRuntime(code []byte, apis *HostAPIRegistry) (out AspectRuntime, 
 	if err := watvm.linkAbort(); err != nil {
 		return nil, err
 	}
+
+	watvm.memory, err = wasmtime.NewMemory(watvm.store, wasmtime.NewMemoryType(DefaultMemoryPages, true, MaxMemoryPages))
+	if err != nil {
+		return nil, err
+	}
+	watvm.linker.Define(watvm.store, "", ExpNameMemory, watvm.memory)
 
 	// instantiate module and store
 	watvm.instance, err = watvm.linker.Instantiate(watvm.store, watvm.module)
@@ -112,20 +121,12 @@ func (w *wasmTimeRuntime) Call(method string, args ...interface{}) (interface{},
 
 // ResetStore reset the whole memory of wasm
 func (w *wasmTimeRuntime) ResetStore(apis *HostAPIRegistry) (err error) {
-	w.store = wasmtime.NewStore(w.engine)
 
-	w.linker = wasmtime.NewLinker(w.engine)
-
-	w.apis = apis
-	// reset link all host apis with new store
-	if err := w.linkToHostFns(); err != nil {
+	w.memory, err = wasmtime.NewMemory(w.store, wasmtime.NewMemoryType(DefaultMemoryPages, true, MaxMemoryPages))
+	if err != nil {
 		return err
 	}
-
-	// add abort function
-	if err := w.linkAbort(); err != nil {
-		return err
-	}
+	w.linker.Define(w.store, "", ExpNameMemory, w.memory)
 
 	w.instance, err = w.linker.Instantiate(w.store, w.module)
 	if err != nil {
@@ -143,7 +144,9 @@ func (w *wasmTimeRuntime) ResetStore(apis *HostAPIRegistry) (err error) {
 
 func (w *wasmTimeRuntime) Destroy() {
 	w.apis.SetMemory(nil)
-	w.apis = nil
+	w.memory = nil
+	// w.linker.Define(w.store, "", ExpNameMemory, nil)
+	// w.apis = nil
 }
 
 func (w *wasmTimeRuntime) linkToHostFns() error {
@@ -211,15 +214,19 @@ func (w *wasmTimeRuntime) linkAbort() error {
 func defaultWASMTimeConfig() *wasmtime.Config {
 	config := wasmtime.NewConfig()
 	// we don't quite need this, discuss latefr
-	config.SetWasmSIMD(false)
+	// config.SetWasmSIMD(false)
 	// affect execution certainty, disable
 	config.SetWasmThreads(false)
 	// multi-value return is useful, should be enabled
 	config.SetWasmMultiValue(true)
 	// need to run benchmarks on this and adjust later
-	config.SetCraneliftOptLevel(wasmtime.OptLevelSpeedAndSize)
+	// config.SetCraneliftOptLevel(wasmtime.OptLevelSpeedAndSize)
 	// disable multi-memory by default
 	config.SetWasmMultiMemory(false)
+
+	config.SetWasmSIMD(true)
+	// config.SetCraneliftOptLevel(wasmtime.OptLevelSpeed)
+	config.SetStrategy(wasmtime.StrategyAuto)
 
 	return config
 }
