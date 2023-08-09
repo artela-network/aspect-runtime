@@ -5,16 +5,14 @@ import (
 	"fmt"
 
 	rtypes "github.com/artela-network/runtime/types"
-	"github.com/bytecodealliance/wasmtime-go/v9"
+	"github.com/bytecodealliance/wasmtime-go/v11"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/pkg/errors"
 )
 
 const (
-	ExpNameMemory      = "memory"
-	MaxMemorySize      = 32 * 1024 * 1024
-	MaxMemoryPages     = 100
-	DefaultMemoryPages = 1
+	ExpNameMemory = "memory"
+	MaxMemorySize = 32 * 1024 * 1024
 )
 
 // wasmTimeRuntime is a wrapper for WASMTime runtime
@@ -24,7 +22,6 @@ type wasmTimeRuntime struct {
 	module   *wasmtime.Module
 	linker   *wasmtime.Linker
 	instance *wasmtime.Instance
-	memory   *wasmtime.Memory
 
 	ctx  *rtypes.Context
 	apis *HostAPIRegistry
@@ -55,12 +52,6 @@ func NewWASMTimeRuntime(code []byte, apis *HostAPIRegistry) (out AspectRuntime, 
 	if err := watvm.linkAbort(); err != nil {
 		return nil, err
 	}
-
-	watvm.memory, err = wasmtime.NewMemory(watvm.store, wasmtime.NewMemoryType(DefaultMemoryPages, true, MaxMemoryPages))
-	if err != nil {
-		return nil, err
-	}
-	watvm.linker.Define(watvm.store, "", ExpNameMemory, watvm.memory)
 
 	// instantiate module and store
 	watvm.instance, err = watvm.linker.Instantiate(watvm.store, watvm.module)
@@ -122,12 +113,6 @@ func (w *wasmTimeRuntime) Call(method string, args ...interface{}) (interface{},
 // ResetStore reset the whole memory of wasm
 func (w *wasmTimeRuntime) ResetStore(apis *HostAPIRegistry) (err error) {
 
-	w.memory, err = wasmtime.NewMemory(w.store, wasmtime.NewMemoryType(DefaultMemoryPages, true, MaxMemoryPages))
-	if err != nil {
-		return err
-	}
-	w.linker.Define(w.store, "", ExpNameMemory, w.memory)
-
 	w.instance, err = w.linker.Instantiate(w.store, w.module)
 	if err != nil {
 		return errors.Wrap(err, "unable to instantiate wasm module")
@@ -144,7 +129,6 @@ func (w *wasmTimeRuntime) ResetStore(apis *HostAPIRegistry) (err error) {
 
 func (w *wasmTimeRuntime) Destroy() {
 	w.apis.SetMemory(nil)
-	w.memory = nil
 	// w.linker.Define(w.store, "", ExpNameMemory, nil)
 	// w.apis = nil
 }

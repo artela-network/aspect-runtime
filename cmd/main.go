@@ -53,16 +53,17 @@ func callPoolLoop(raw []byte) {
 	hostApis := runtime.NewHostAPIRegistry()
 	addApis(hostApis)
 
-	for i := 0; i < 10000; i++ {
+	pool := runtime.NewRuntimePool(10)
+	for i := 0; i < 1000000; i++ {
 		if i%100 == 0 {
 			fmt.Println("call times: ", i)
 			// time.Sleep(5 * time.Second)
 			time.Sleep(1 * time.Millisecond)
 		}
-		pool := runtime.NewRuntimePool(10)
 		key, wasmTimeRuntime, err := pool.Runtime(runtime.WASM, raw, hostApis)
 		if err != nil {
 			fmt.Println("NewAspectRuntime", err)
+			panic(err)
 		}
 		pool.Return(key, wasmTimeRuntime)
 	}
