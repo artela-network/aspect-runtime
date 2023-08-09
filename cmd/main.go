@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path"
 	"sync"
 	"time"
 
@@ -20,8 +19,9 @@ func main() {
 
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
-	cwd, _ := os.Getwd()
-	raw, _ := os.ReadFile(path.Join(cwd, "../wasmtime/testdata/runtime_test.wasm"))
+	// cwd, _ := os.Getwd()
+	// raw, _ := os.ReadFile(path.Join(cwd, "../wasmtime/testdata/runtime_test.wasm"))
+	raw, _ := os.ReadFile("/Users/likun/go/src/github.com/test/asexample/build/release.wasm")
 	// for i := 0; i < 100000; i++ {
 	// 	if i%100 == 0 {
 	// 		fmt.Println("call times: ", i)
@@ -57,8 +57,8 @@ func callPoolLoop(raw []byte) {
 	for i := 0; i < 1000000; i++ {
 		if i%100 == 0 {
 			fmt.Println("call times: ", i)
-			// time.Sleep(5 * time.Second)
-			time.Sleep(1 * time.Millisecond)
+			time.Sleep(1 * time.Second)
+			// time.Sleep(1 * time.Millisecond)
 		}
 		key, wasmTimeRuntime, err := pool.Runtime(runtime.WASM, raw, hostApis)
 		if err != nil {

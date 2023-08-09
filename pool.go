@@ -85,7 +85,7 @@ func (pool *RuntimePool) get(rtType RuntimeType, code []byte, apis *HostAPIRegis
 	pool.Lock()
 	defer pool.Unlock()
 
-	hash := hashOfRuntimeArgs(rtType, code)
+	hash := hashOfRuntimeArgs(rtType, code, apis)
 	elem, ok := pool.cache[hash]
 	if ok {
 		// remove from the pool, either it is borrowed or removed.
@@ -119,8 +119,8 @@ func (pool *RuntimePool) add(key string, runtime AspectRuntime) {
 	pool.cache[key] = new
 }
 
-func hashOfRuntimeArgs(runtimeType RuntimeType, code []byte) string {
-	return hex.EncodeToString(hash(runtimeType, code))
+func hashOfRuntimeArgs(runtimeType RuntimeType, code []byte, apis *HostAPIRegistry) string {
+	return hex.EncodeToString(hash(runtimeType, code, apis))
 }
 
 func hash(objs ...interface{}) []byte {

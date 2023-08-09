@@ -72,26 +72,30 @@ func (w *wasmTimeRuntime) Call(method string, args ...interface{}) (interface{},
 		return "", errors.Errorf("method %s does not exist", method)
 	}
 
-	ptrs := make([]interface{}, len(args))
-	for i, arg := range args {
-		var err error
-		typeIndex := rtypes.AssertType(arg)
-		rtType, ok := rtypes.TypeObjectMapping[typeIndex]
-		if !ok {
-			return nil, errors.Errorf("%v is not supported", arg)
-		}
-		if err := rtType.Set(arg); err != nil {
-			return nil, errors.Wrapf(err, "set argument %+v", arg)
-		}
-		ptrs[i], err = rtType.Store(w.ctx)
-		if err != nil {
-			return "", errors.Wrapf(err, "write memory %+v", arg)
-		}
+	// ptrs := make([]interface{}, len(args))
+	// for i, arg := range args {
+	// 	var err error
+	// 	typeIndex := rtypes.AssertType(arg)
+	// 	rtType, ok := rtypes.TypeObjectMapping[typeIndex]
+	// 	if !ok {
+	// 		return nil, errors.Errorf("%v is not supported", arg)
+	// 	}
+	// 	if err := rtType.Set(arg); err != nil {
+	// 		return nil, errors.Wrapf(err, "set argument %+v", arg)
+	// 	}
+	// 	ptrs[i], err = rtType.Store(w.ctx)
+	// 	if err != nil {
+	// 		return "", errors.Wrapf(err, "write memory %+v", arg)
+	// 	}
+	// }
+
+	val, err := run.Call(w.store, args...)
+	if err != nil {
+		return nil, errors.Wrapf(err, "method %s execution fail", method)
 	}
 
-	val, err := run.Call(w.store, ptrs...)
-	if err != nil {
-		return "", errors.Wrapf(err, "method %s execution fail", method)
+	if val == nil {
+		return nil, nil
 	}
 
 	ptr, ok := val.(int32)
