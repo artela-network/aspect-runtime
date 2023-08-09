@@ -1,9 +1,7 @@
 package runtimetypes
 
 import (
-	"bytes"
 	"errors"
-	"fmt"
 )
 
 type Memory struct {
@@ -11,20 +9,7 @@ type Memory struct {
 	alloc func(int32) (int32, error)
 }
 
-var lastMem []byte
-
 func NewMemory(data func() []byte, alloc func(int32) (int32, error)) *Memory {
-	if lastMem == nil {
-		lastMem = bytes.Clone(data())
-	} else {
-		currentMem := bytes.Clone(data())
-		if bytes.Compare(lastMem, currentMem) != 0 {
-			fmt.Println("mem is not cleared")
-		} else {
-			lastMem = currentMem
-		}
-	}
-
 	return &Memory{
 		data:  data,
 		alloc: alloc,
