@@ -1,6 +1,8 @@
 package runtimetypes
 
-import "errors"
+import (
+	"errors"
+)
 
 type Memory struct {
 	data  func() []byte
