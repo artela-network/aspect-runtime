@@ -37,6 +37,7 @@ func BenchWasm(addCount, loopCount int64, jp int64) {
 	_ = pool
 
 	loop := int64(0)
+	left := loopCount % jp
 	if jp != 0 {
 		loop = loopCount / jp
 	}
@@ -56,12 +57,9 @@ func BenchWasm(addCount, loopCount int64, jp int64) {
 
 	t1 := time.Now()
 	for i := 0; i < TIMES; i++ {
-		if jp == 0 {
+		wasmCall(addCount, loop+left)
+		for k := int64(1); k < jp; k++ {
 			wasmCall(addCount, loop)
-		} else {
-			for k := int64(0); k < jp; k++ {
-				wasmCall(addCount, loop)
-			}
 		}
 	}
 	t2 := time.Now()
@@ -98,6 +96,7 @@ func BenchEVM(addCount, loopCount int64, jp int64) {
 
 	evm = vm.NewEVM(vmctx, vm.TxContext{Msg: new(MockMessage)}, statedb, params.AllEthashProtocolChanges, vmConf)
 
+	left := loopCount % jp
 	loop := int64(0)
 	if jp != 0 {
 		loop = loopCount / jp
@@ -107,25 +106,28 @@ func BenchEVM(addCount, loopCount int64, jp int64) {
 		inputData = common.Hex2Bytes(input)
 	)
 
+	var (
+		input1     = PackFibo(addCount, loop+left)
+		inputData1 = common.Hex2Bytes(input1)
+	)
+
 	totalGas := uint64(0)
 	t1 := time.Now()
 	for i := 0; i < TIMES; i++ {
-		if jp == 0 {
+		gas := uint64(0)
+		_, gas, err = evm.Call(vm.AccountRef(sender), address, inputData1, math.MaxUint64, new(big.Int))
+		if err != nil {
+			panic(err)
+		}
+		totalGas += (math.MaxUint64 - gas)
+
+		for k := int64(1); k < jp; k++ {
 			gas := uint64(0)
 			_, gas, err = evm.Call(vm.AccountRef(sender), address, inputData, math.MaxUint64, new(big.Int))
 			if err != nil {
 				panic(err)
 			}
 			totalGas += (math.MaxUint64 - gas)
-		} else {
-			for k := int64(0); k < jp; k++ {
-				gas := uint64(0)
-				_, gas, err = evm.Call(vm.AccountRef(sender), address, inputData, math.MaxUint64, new(big.Int))
-				if err != nil {
-					panic(err)
-				}
-				totalGas += (math.MaxUint64 - gas)
-			}
 		}
 	}
 	t2 := time.Now()

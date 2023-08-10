@@ -1,11 +1,11 @@
 package main
 
 const (
-	TIMES = 2000
+	TIMES = 10000
 )
 
 func main() {
-	ConstantJoinPointCount()
+	//ConstantJoinPointCount()
 	ConstantComputationalComplexity()
 }
 
@@ -40,7 +40,7 @@ func ConstantComputationalComplexity() {
 	// BenchJoinPoint(true)
 	// BenchCallEVM()
 	m := int64(10)
-	n := int64(240)
+	n := int64(160)
 
 	BenchWasm(m, n, 1)
 	BenchWasm(m, n, 4)
@@ -52,6 +52,7 @@ func ConstantComputationalComplexity() {
 	BenchWasm(m, n, 28)
 	BenchWasm(m, n, 32)
 	BenchWasm(m, n, 36)
+	BenchWasm(m, n, 40)
 	// BenchWasm(m, n, 96)
 
 	BenchEVM(m, n, 1)
@@ -64,6 +65,7 @@ func ConstantComputationalComplexity() {
 	BenchEVM(m, n, 28)
 	BenchEVM(m, n, 32)
 	BenchEVM(m, n, 36)
+	BenchEVM(m, n, 40)
 	// BenchEVM(m, n, 96)
 
 	// BenchCostOfSwithContext()
