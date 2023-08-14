@@ -32,7 +32,7 @@ func NewAspectRuntime(runtimeType RuntimeType, code []byte, apis *HostAPIRegistr
 
 	engine := enginePool[runtimeType]
 	if engine == nil {
-		return nil, errors.New("runtime engine does not exist")
+		return nil, errors.New("runtime Engine does not exist")
 	}
 
 	aspectRuntime, err := engine(code, apis)

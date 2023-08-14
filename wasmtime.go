@@ -15,35 +15,35 @@ const (
 	MaxMemorySize = 32 * 1024 * 1024
 )
 
-// wasmTimeRuntime is a wrapper for WASMTime runtime
-type wasmTimeRuntime struct {
-	engine   *wasmtime.Engine
-	store    *wasmtime.Store
-	module   *wasmtime.Module
-	linker   *wasmtime.Linker
-	instance *wasmtime.Instance
+// WasmTimeRuntime is a wrapper for WASMTime runtime
+type WasmTimeRuntime struct {
+	Engine   *wasmtime.Engine
+	Store    *wasmtime.Store
+	Module   *wasmtime.Module
+	Linker   *wasmtime.Linker
+	Instance *wasmtime.Instance
 
-	ctx  *rtypes.Context
-	apis *HostAPIRegistry
+	Ctx  *rtypes.Context
+	Apis *HostAPIRegistry
 }
 
 func NewWASMTimeRuntime(code []byte, apis *HostAPIRegistry) (out AspectRuntime, err error) {
-	watvm := &wasmTimeRuntime{engine: wasmtime.NewEngineWithConfig(defaultWASMTimeConfig())}
-	watvm.store = wasmtime.NewStore(watvm.engine)
+	watvm := &WasmTimeRuntime{Engine: wasmtime.NewEngineWithConfig(defaultWASMTimeConfig())}
+	watvm.Store = wasmtime.NewStore(watvm.Engine)
 	// limit memory size to 32MB for now
-	watvm.store.Limiter(MaxMemorySize, -1, -1, -1, -1)
+	watvm.Store.Limiter(MaxMemorySize, -1, -1, -1, -1)
 
-	watvm.module, err = wasmtime.NewModule(watvm.engine, code)
+	watvm.Module, err = wasmtime.NewModule(watvm.Engine, code)
 	if err != nil {
-		log.Error("failed to create wasm module", "err", err, "size", len(code))
-		return nil, errors.Wrap(err, "unable create wasm module")
+		log.Error("failed to create wasm Module", "err", err, "size", len(code))
+		return nil, errors.Wrap(err, "unable create wasm Module")
 	}
 
-	// create host api linker
-	watvm.linker = wasmtime.NewLinker(watvm.engine)
+	// create host api Linker
+	watvm.Linker = wasmtime.NewLinker(watvm.Engine)
 
-	// link all host apis
-	watvm.apis = apis
+	// link all host Apis
+	watvm.Apis = apis
 	if err := watvm.linkToHostFns(); err != nil {
 		return nil, err
 	}
@@ -53,21 +53,21 @@ func NewWASMTimeRuntime(code []byte, apis *HostAPIRegistry) (out AspectRuntime, 
 		return nil, err
 	}
 
-	// instantiate module and store
-	watvm.instance, err = watvm.linker.Instantiate(watvm.store, watvm.module)
+	// instantiate Module and Store
+	watvm.Instance, err = watvm.Linker.Instantiate(watvm.Store, watvm.Module)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to instantiate wasm module")
+		return nil, errors.Wrap(err, "unable to instantiate wasm Module")
 	}
 
-	watvm.setCtx()
-	apis.SetMemory(watvm.ctx.Memory())
+	watvm.SetCtx()
+	apis.SetMemory(watvm.Ctx.Memory())
 
 	return watvm, err
 }
 
 // Call wasm
-func (w *wasmTimeRuntime) Call(method string, args ...interface{}) (interface{}, error) {
-	run := w.instance.GetFunc(w.store, method)
+func (w *WasmTimeRuntime) Call(method string, args ...interface{}) (interface{}, error) {
+	run := w.Instance.GetFunc(w.Store, method)
 	if run == nil {
 		return "", errors.Errorf("method %s does not exist", method)
 	}
@@ -83,13 +83,13 @@ func (w *wasmTimeRuntime) Call(method string, args ...interface{}) (interface{},
 	// 	if err := rtType.Set(arg); err != nil {
 	// 		return nil, errors.Wrapf(err, "set argument %+v", arg)
 	// 	}
-	// 	ptrs[i], err = rtType.Store(w.ctx)
+	// 	ptrs[i], err = rtType.Store(w.Ctx)
 	// 	if err != nil {
 	// 		return "", errors.Wrapf(err, "write memory %+v", arg)
 	// 	}
 	// }
 
-	val, err := run.Call(w.store, args...)
+	val, err := run.Call(w.Store, args...)
 	if err != nil {
 		return nil, errors.Wrapf(err, "method %s execution fail", method)
 	}
@@ -104,49 +104,49 @@ func (w *wasmTimeRuntime) Call(method string, args ...interface{}) (interface{},
 	}
 
 	h := &rtypes.TypeHeader{}
-	h.HLoad(w.ctx, ptr)
+	h.HLoad(w.Ctx, ptr)
 	resType, ok := rtypes.TypeObjectMapping[h.DataType()]
 	if !ok {
 		return nil, errors.Errorf("read param failed, type %d not found", resType)
 	}
 
-	resType.Load(w.ctx, ptr)
+	resType.Load(w.Ctx, ptr)
 	return resType.Get(), nil
 }
 
 // ResetStore reset the whole memory of wasm
-func (w *wasmTimeRuntime) ResetStore(apis *HostAPIRegistry) (err error) {
+func (w *WasmTimeRuntime) ResetStore(apis *HostAPIRegistry) (err error) {
 
-	w.instance, err = w.linker.Instantiate(w.store, w.module)
+	w.Instance, err = w.Linker.Instantiate(w.Store, w.Module)
 	if err != nil {
-		return errors.Wrap(err, "unable to instantiate wasm module")
+		return errors.Wrap(err, "unable to instantiate wasm Module")
 	}
 
 	// set context
-	w.setCtx()
+	w.SetCtx()
 
-	// set memory instance to apis, for host function ctx.
-	w.apis.SetMemory(w.ctx.Memory())
+	// set memory Instance to Apis, for host function Ctx.
+	w.Apis.SetMemory(w.Ctx.Memory())
 
 	return nil
 }
 
-func (w *wasmTimeRuntime) Destroy() {
-	w.apis.SetMemory(nil)
-	// w.linker.Define(w.store, "", ExpNameMemory, nil)
-	// w.apis = nil
+func (w *WasmTimeRuntime) Destroy() {
+	w.Apis.SetMemory(nil)
+	// w.Linker.Define(w.Store, "", ExpNameMemory, nil)
+	// w.Apis = nil
 }
 
-func (w *wasmTimeRuntime) linkToHostFns() error {
-	for module, namespaces := range w.apis.WrapperFuncs() {
+func (w *WasmTimeRuntime) linkToHostFns() error {
+	for module, namespaces := range w.Apis.WrapperFuncs() {
 		for ns, methods := range namespaces {
 			for method, function := range methods {
 				// create a function wrapper for our "hostapi" on the go side
-				item := wasmtime.WrapFunc(w.store, function)
+				item := wasmtime.WrapFunc(w.Store, function)
 
-				// create linker with host function injected
-				if err := w.linker.Define(
-					w.store,
+				// create Linker with host function injected
+				if err := w.Linker.Define(
+					w.Store,
 					buildModuleName(module),
 					buildModuleMethod(ns, method),
 					item,
@@ -161,22 +161,22 @@ func (w *wasmTimeRuntime) linkToHostFns() error {
 	return nil
 }
 
-func (w *wasmTimeRuntime) setCtx() {
-	w.ctx = rtypes.NewContext(
+func (w *WasmTimeRuntime) SetCtx() {
+	w.Ctx = rtypes.NewContext(
 		// The context here is reserved for future functionalities,
 		// such as logging, tracing, and other purposes.
 		context.Background(),
 		rtypes.NewMemory(
 			func() []byte {
-				return w.instance.GetExport(w.store, ExpNameMemory).Memory().UnsafeData(w.store)
+				return w.Instance.GetExport(w.Store, ExpNameMemory).Memory().UnsafeData(w.Store)
 			},
 			func(size int32) (int32, error) {
-				memoryAllocator := w.instance.GetFunc(w.store, "allocate")
+				memoryAllocator := w.Instance.GetFunc(w.Store, "allocate")
 				if memoryAllocator == nil {
 					return 0, errors.New("function 'allocate' does not exist")
 				}
 
-				res, err := memoryAllocator.Call(w.store, size)
+				res, err := memoryAllocator.Call(w.Store, size)
 				if err != nil {
 					return 0, err
 				}
@@ -187,11 +187,11 @@ func (w *wasmTimeRuntime) setCtx() {
 	)
 }
 
-func (w *wasmTimeRuntime) linkAbort() error {
-	abort := wasmtime.WrapFunc(w.store, func(a, b, c, d int32) {
+func (w *WasmTimeRuntime) linkAbort() error {
+	abort := wasmtime.WrapFunc(w.Store, func(a, b, c, d int32) {
 		log.Debug("abort!")
 	})
-	if err := w.linker.Define(w.store, "env", "abort", abort); err != nil {
+	if err := w.Linker.Define(w.Store, "env", "abort", abort); err != nil {
 		return errors.Wrapf(err, "unable to link to abort")
 	}
 	return nil

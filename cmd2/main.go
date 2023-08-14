@@ -1,12 +1,101 @@
 package main
 
+import (
+	"fmt"
+	"github.com/artela-network/runtime"
+	"log"
+	"os"
+	"path"
+	"time"
+
+	// "net/http"
+	// _ "net/http/pprof"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/pprof"
+)
+
 const (
-	TIMES = 10000
+	TIMES = 100000
 )
 
 func main() {
+	go func() {
+		app := fiber.New()
+
+		app.Use(pprof.New())
+
+		app.Get("/", handleRequest)
+		log.Fatal(app.Listen(":8080"))
+	}()
 	//ConstantJoinPointCount()
-	ConstantComputationalComplexity()
+	//ConstantComputationalComplexity()
+	TestPooledCall()
+	TestCall()
+}
+
+func handleRequest(c *fiber.Ctx) error {
+	log.Printf("handling request from: %s", c.Context().RemoteAddr())
+	if _, err := c.WriteString(c.Context().RemoteAddr().String()); err != nil {
+		log.Printf("could not write IP: %s", err)
+	}
+	return nil
+}
+
+func TestCall() {
+	cwd, _ := os.Getwd()
+	raw, _ := os.ReadFile(path.Join(cwd, "./release.wasm"))
+
+	hostApis := runtime.NewHostAPIRegistry()
+
+	rt, _ := runtime.NewAspectRuntime(runtime.WASM, raw, hostApis)
+	wast := rt.(*runtime.WasmTimeRuntime)
+
+	wasmPrepare := func() {
+		wast.Instance, _ = wast.Linker.Instantiate(wast.Store, wast.Module)
+
+		// set context
+		wast.SetCtx()
+
+		// set memory instance to apis, for host function ctx.
+		wast.Apis.SetMemory(wast.Ctx.Memory())
+	}
+
+	start := time.Now()
+	for i := 0; i < 1_0000; i++ {
+		wasmPrepare()
+	}
+	end := time.Now()
+
+	fmt.Printf("%d ns/op\n", end.Sub(start).Nanoseconds()/1_0000)
+}
+
+func TestPooledCall() {
+	cwd, _ := os.Getwd()
+	raw, _ := os.ReadFile(path.Join(cwd, "./release.wasm"))
+
+	hostApis := runtime.NewHostAPIRegistry()
+
+	pool := runtime.NewRuntimePool(10)
+	key, rt, err := pool.Runtime(runtime.WASM, raw, hostApis)
+	if err != nil {
+		panic(err)
+	}
+	pool.Return(key, rt)
+
+	start := time.Now()
+	for i := 0; i < 1_0000; i++ {
+		key, rt, err := pool.Runtime(runtime.WASM, raw, hostApis)
+		if err != nil {
+			fmt.Println(i)
+			panic(err)
+		}
+
+		pool.Return(key, rt)
+	}
+	end := time.Now()
+
+	fmt.Printf("%d ns/op\n", end.Sub(start).Nanoseconds()/1_0000)
 }
 
 func ConstantJoinPointCount() {

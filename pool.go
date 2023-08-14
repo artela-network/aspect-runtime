@@ -22,18 +22,18 @@ type (
 		capacity int
 
 		// list.Value = &entry
-		keys *list.List
+		//keys *list.List
 
 		// key: hash of args to build the AspectRuntime
-		cache map[string]*list.Element
+		cache map[string]AspectRuntime
 	}
 )
 
 func NewRuntimePool(capacity int) *RuntimePool {
 	return &RuntimePool{
 		capacity: capacity,
-		cache:    make(map[string]*list.Element),
-		keys:     list.New(),
+		cache:    make(map[string]AspectRuntime),
+		//keys:     list.New(),
 	}
 }
 
@@ -60,21 +60,21 @@ func (pool *RuntimePool) Runtime(rtType RuntimeType, code []byte, apis *HostAPIR
 
 // Return returns a runtime to the pool
 func (pool *RuntimePool) Return(key string, runtime AspectRuntime) {
-	pool.Lock()
-	defer pool.Unlock()
+	//pool.Lock()
+	//defer pool.Unlock()
 
 	// free the hostapis and ctx injected to types, in case that go runtime GC failed
 	runtime.Destroy()
 
-	if elem, ok := pool.cache[key]; ok {
-		pool.keys.MoveToFront(elem)
-		return
-	}
+	//if elem, ok := pool.cache[key]; ok {
+	//	pool.keys.MoveToFront(elem)
+	//	return
+	//}
 
 	if pool.Len() >= pool.Capacity() {
 		// remove the last from the pool
-		last := pool.keys.Back()
-		pool.remove(last.Value.(*entry).key, last)
+		//last := pool.keys.Back()
+		//pool.remove(last.Value.(*entry).key, last)
 	}
 
 	// add new to front
@@ -82,17 +82,17 @@ func (pool *RuntimePool) Return(key string, runtime AspectRuntime) {
 }
 
 func (pool *RuntimePool) get(rtType RuntimeType, code []byte, apis *HostAPIRegistry, forceRefresh bool) (string, AspectRuntime, error) {
-	pool.Lock()
-	defer pool.Unlock()
+	//pool.Lock()
+	//defer pool.Unlock()
 
-	hash := hashOfRuntimeArgs(rtType, code, apis)
+	hash := "a"
 	elem, ok := pool.cache[hash]
 	if ok {
 		// remove from the pool, either it is borrowed or removed.
-		pool.remove(hash, elem)
+		pool.remove(hash, nil)
 
 		if !forceRefresh {
-			rt := elem.Value.(*entry).runtime
+			rt := elem
 			if err := rt.ResetStore(apis); err == nil {
 				return hash, rt, nil
 			}
@@ -110,13 +110,13 @@ func (pool *RuntimePool) get(rtType RuntimeType, code []byte, apis *HostAPIRegis
 }
 
 func (pool *RuntimePool) remove(key string, elem *list.Element) {
-	pool.keys.Remove(elem)
+	//pool.keys.Remove(elem)
 	delete(pool.cache, key)
 }
 
 func (pool *RuntimePool) add(key string, runtime AspectRuntime) {
-	new := pool.keys.PushFront(&entry{key, runtime})
-	pool.cache[key] = new
+	//new := pool.keys.PushFront(&entry{key, runtime})
+	pool.cache[key] = runtime
 }
 
 func hashOfRuntimeArgs(runtimeType RuntimeType, code []byte, apis *HostAPIRegistry) string {

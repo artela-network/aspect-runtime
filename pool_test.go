@@ -11,7 +11,7 @@ import (
 )
 
 // Test Case: normal case for addApi add and execute
-// Same hostapi instance
+// Same hostapi Instance
 func TestCallNormalWithPool(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
@@ -36,7 +36,7 @@ func TestCallNormalWithPool(t *testing.T) {
 	}
 }
 
-// Different hostapi instance
+// Different hostapi Instance
 func TestCallNormalWithPool2(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
