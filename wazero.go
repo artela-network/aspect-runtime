@@ -164,10 +164,6 @@ func (w *wazeroRuntime) Destroy() {
 
 func (w *wazeroRuntime) ResetStore(apis *HostAPIRegistry) (err error) {
 	// In Wazero runtime clean-up and re-instantiate can be done together
-	if err := w.rt.Close(w.ctx); err != nil {
-		return err
-	}
-
 	if err := w.instance.Close(w.ctx); err != nil {
 		return err
 	}
