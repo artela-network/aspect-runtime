@@ -166,7 +166,7 @@ func (w *wasmTimeRuntime) setCtx() {
 		// The context here is reserved for future functionalities,
 		// such as logging, tracing, and other purposes.
 		context.Background(),
-		rtypes.NewMemory(
+		rtypes.NewWASMTimeMemory(
 			func() []byte {
 				return w.instance.GetExport(w.store, ExpNameMemory).Memory().UnsafeData(w.store)
 			},

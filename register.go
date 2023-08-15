@@ -49,7 +49,7 @@ func (h *HostAPIRegistry) WrapperFuncs() map[Module]map[Namesapce]map[MethodName
 	return h.wrapperFuncs
 }
 
-func (h *HostAPIRegistry) SetMemory(mem *rtypes.Memory) {
+func (h *HostAPIRegistry) SetMemory(mem rtypes.Memory) {
 	if h.ctx == nil {
 		h.ctx = rtypes.NewContext(context.Background(), mem)
 		return

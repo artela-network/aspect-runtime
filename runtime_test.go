@@ -38,7 +38,7 @@ func TestCallEmptyStr(t *testing.T) {
 	)
 	addApis(t, hostApis)
 
-	wasmTimeRuntime, err = NewAspectRuntime(WASM, raw, hostApis)
+	wasmTimeRuntime, err = NewAspectRuntime(WASMTime, raw, hostApis)
 	require.Equal(t, nil, err)
 
 	{
@@ -63,7 +63,7 @@ func TestCallNormal(t *testing.T) {
 	)
 	addApis(t, hostApis)
 
-	wasmTimeRuntime, err = NewAspectRuntime(WASM, raw, hostApis)
+	wasmTimeRuntime, err = NewAspectRuntime(WASMTime, raw, hostApis)
 	require.Equal(t, nil, err)
 
 	{
@@ -92,7 +92,7 @@ func TestCallMultiArgs(t *testing.T) {
 
 	addApis(t, hostApis)
 
-	wasmTimeRuntime, err = NewAspectRuntime(WASM, raw, hostApis)
+	wasmTimeRuntime, err = NewAspectRuntime(WASMTime, raw, hostApis)
 	require.Equal(t, nil, err)
 
 	{
@@ -118,7 +118,7 @@ func TestBytesNormal(t *testing.T) {
 		err             error
 	)
 
-	wasmTimeRuntime, err = NewAspectRuntime(WASM, raw, hostApis)
+	wasmTimeRuntime, err = NewAspectRuntime(WASMTime, raw, hostApis)
 	require.Equal(t, nil, err)
 	res, err := wasmTimeRuntime.Call("testBytes", arg)
 	require.Equal(t, nil, err)
@@ -141,7 +141,7 @@ func TestCallHostApiNoReturn(t *testing.T) {
 		err             error
 	)
 
-	wasmTimeRuntime, err = NewAspectRuntime(WASM, raw, hostApis)
+	wasmTimeRuntime, err = NewAspectRuntime(WASMTime, raw, hostApis)
 	require.Equal(t, nil, err)
 	res, err := wasmTimeRuntime.Call("greet3", arg)
 	require.Equal(t, nil, err)
@@ -165,7 +165,7 @@ func TestBytesNil(t *testing.T) {
 		err             error
 	)
 
-	wasmTimeRuntime, err = NewAspectRuntime(WASM, raw, hostApis)
+	wasmTimeRuntime, err = NewAspectRuntime(WASMTime, raw, hostApis)
 	require.Equal(t, nil, err)
 	res, err := wasmTimeRuntime.Call("testBytes", arg)
 	require.Equal(t, nil, err)
@@ -191,7 +191,7 @@ func TestLongString(t *testing.T) {
 	}
 	addApis(t, hostApis)
 
-	wasmTimeRuntime, err = NewAspectRuntime(WASM, raw, hostApis)
+	wasmTimeRuntime, err = NewAspectRuntime(WASMTime, raw, hostApis)
 	require.Equal(t, nil, err)
 
 	{

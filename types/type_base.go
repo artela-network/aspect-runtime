@@ -23,22 +23,21 @@ type IType interface {
 
 type Context struct {
 	context.Context
-
-	memory *Memory
+	memory Memory
 }
 
-func NewContext(ctx context.Context, memory *Memory) *Context {
+func NewContext(ctx context.Context, memory Memory) *Context {
 	return &Context{
 		Context: ctx,
 		memory:  memory,
 	}
 }
 
-func (c *Context) Memory() *Memory {
+func (c *Context) Memory() Memory {
 	return c.memory
 }
 
-func (c *Context) SetMemory(mem *Memory) {
+func (c *Context) SetMemory(mem Memory) {
 	c.memory = mem
 }
 

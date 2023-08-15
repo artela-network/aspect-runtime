@@ -11,6 +11,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible
 	github.com/stretchr/testify v1.8.4
+	github.com/tetratelabs/wazero v1.4.0
 )
 
 require (
@@ -99,3 +100,6 @@ require (
 )
 
 replace github.com/ethereum/go-ethereum => github.com/ethereum/go-ethereum v1.10.26
+replace (
+	github.com/artela-network/artelasdk => ../artelasdk
+)

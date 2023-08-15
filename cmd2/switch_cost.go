@@ -80,7 +80,7 @@ func BenchWasmSwitch() {
 	_ = pool
 
 	wasmCall := func(m, n int64) {
-		key, rt, err := pool.Runtime(runtime.WASM, raw, hostApis)
+		key, rt, err := pool.Runtime(runtime.WASMTime, raw, hostApis)
 		if err != nil {
 			panic(err)
 		}

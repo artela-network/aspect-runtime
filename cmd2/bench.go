@@ -17,7 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 )
 
-func BenchWasm(addCount, loopCount int64, jp int64) {
+func BenchWasm(runtimeType runtime.RuntimeType, addCount, loopCount int64, jp int64) {
 
 	///
 	/// create of wasm instance
@@ -43,7 +43,7 @@ func BenchWasm(addCount, loopCount int64, jp int64) {
 	}
 
 	wasmCall := func(i, j int64) {
-		key, rt, err := pool.Runtime(runtime.WASM, raw, hostApis)
+		key, rt, err := pool.Runtime(runtimeType, raw, hostApis)
 		if err != nil {
 			panic(err)
 		}

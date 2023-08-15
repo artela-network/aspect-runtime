@@ -22,7 +22,7 @@ func TestCallNormalWithPool(t *testing.T) {
 	pool := NewRuntimePool(10)
 
 	for i := 0; i < 12; i++ {
-		key, wasmTimeRuntime, err := pool.Runtime(WASM, raw, hostApis)
+		key, wasmTimeRuntime, err := pool.Runtime(WAZero, raw, hostApis)
 		require.Equal(t, nil, err)
 		res, err := wasmTimeRuntime.Call("testIncrease")
 		require.Equal(t, nil, err)
@@ -46,7 +46,7 @@ func TestCallNormalWithPool2(t *testing.T) {
 	for i := 0; i < 12; i++ {
 		hostApis := NewHostAPIRegistry()
 		addApis(t, hostApis)
-		key, wasmTimeRuntime, err := pool.Runtime(WASM, raw, hostApis)
+		key, wasmTimeRuntime, err := pool.Runtime(WASMTime, raw, hostApis)
 		require.Equal(t, nil, err)
 		res, err := wasmTimeRuntime.Call("testIncrease")
 		require.Equal(t, nil, err)
@@ -68,7 +68,7 @@ func TestPoolPerformance(t *testing.T) {
 	// call without pool
 	t1 := time.Now()
 	for i := 0; i < 100; i++ {
-		wasmTimeRuntime, err := NewAspectRuntime(WASM, raw, hostApis)
+		wasmTimeRuntime, err := NewAspectRuntime(WASMTime, raw, hostApis)
 		require.Equal(t, nil, err)
 		_ = wasmTimeRuntime
 	}
@@ -80,7 +80,7 @@ func TestPoolPerformance(t *testing.T) {
 	pool := NewRuntimePool(10)
 	t3 := time.Now()
 	for i := 0; i < 100; i++ {
-		key, wasmTimeRuntime, err := pool.Runtime(WASM, raw, hostApis)
+		key, wasmTimeRuntime, err := pool.Runtime(WASMTime, raw, hostApis)
 		require.Equal(t, nil, err)
 		pool.Return(key, wasmTimeRuntime)
 	}

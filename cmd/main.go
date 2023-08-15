@@ -42,7 +42,7 @@ func callPool(raw []byte) {
 	addApis(hostApis)
 
 	pool := runtime.NewRuntimePool(10)
-	key, wasmTimeRuntime, err := pool.Runtime(runtime.WASM, raw, hostApis)
+	key, wasmTimeRuntime, err := pool.Runtime(runtime.WASMTime, raw, hostApis)
 	if err != nil {
 		fmt.Println("NewAspectRuntime", err)
 	}
@@ -60,7 +60,7 @@ func callPoolLoop(raw []byte) {
 			time.Sleep(1 * time.Second)
 			// time.Sleep(1 * time.Millisecond)
 		}
-		key, wasmTimeRuntime, err := pool.Runtime(runtime.WASM, raw, hostApis)
+		key, wasmTimeRuntime, err := pool.Runtime(runtime.WASMTime, raw, hostApis)
 		if err != nil {
 			fmt.Println("NewAspectRuntime", err)
 			panic(err)
@@ -79,7 +79,7 @@ func callRTLoop(raw []byte) {
 	)
 	addApis(hostApis)
 
-	wasmTimeRuntime, err = runtime.NewAspectRuntime(runtime.WASM, raw, hostApis)
+	wasmTimeRuntime, err = runtime.NewAspectRuntime(runtime.WASMTime, raw, hostApis)
 	if err != nil {
 		fmt.Println("NewAspectRuntime", err)
 	}
@@ -110,7 +110,7 @@ func callRT(raw []byte) {
 	)
 	addApis(hostApis)
 
-	wasmTimeRuntime, err = runtime.NewAspectRuntime(runtime.WASM, raw, hostApis)
+	wasmTimeRuntime, err = runtime.NewAspectRuntime(runtime.WASMTime, raw, hostApis)
 	if err != nil {
 		fmt.Println("NewAspectRuntime", err)
 	}

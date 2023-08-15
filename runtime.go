@@ -10,7 +10,8 @@ type (
 )
 
 const (
-	WASM RuntimeType = iota
+	WASMTime RuntimeType = iota
+	WAZero
 )
 
 var (
@@ -25,9 +26,13 @@ type AspectRuntime interface {
 
 // NewAspectRuntime is the factory method for creating aspect runtime
 func NewAspectRuntime(runtimeType RuntimeType, code []byte, apis *HostAPIRegistry) (AspectRuntime, error) {
-	if runtimeType == WASM {
-		// only support wasm now
+	switch runtimeType {
+	case WASMTime:
 		enginePool[runtimeType] = NewWASMTimeRuntime
+	}
+	if runtimeType == WASMTime {
+		// only support wasm now
+
 	}
 
 	engine := enginePool[runtimeType]

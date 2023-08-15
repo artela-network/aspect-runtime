@@ -46,7 +46,7 @@ func BenchJoinPoint(usePool bool) {
 		if usePool {
 			v, _ := mem.VirtualMemory()
 			fmt.Println("index: ", i, ", total: ", v.Total/1024/1024, ", used %: ", v.UsedPercent, ", used: ", v.Used/1024/1024, ", free: ", v.Free/1024/1024)
-			key, rt, err := pool.Runtime(runtime.WASM, raw, hostApis)
+			key, rt, err := pool.Runtime(runtime.WASMTime, raw, hostApis)
 			if err != nil {
 				// panic(err)
 				fmt.Println(err)
@@ -55,7 +55,7 @@ func BenchJoinPoint(usePool bool) {
 			pool.Return(key, rt)
 
 		} else {
-			rt, err := runtime.NewAspectRuntime(runtime.WASM, raw, hostApis)
+			rt, err := runtime.NewAspectRuntime(runtime.WASMTime, raw, hostApis)
 			if err != nil {
 				panic(err)
 			}
