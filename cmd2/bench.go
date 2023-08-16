@@ -17,6 +17,56 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 )
 
+func BenchCallWasm(addCount, loopCount int64, jp int64) {
+
+	///
+	/// create of wasm instance
+	///
+	cwd, _ := os.Getwd()
+	raw, _ := os.ReadFile(path.Join(cwd, "./release.wasm"))
+
+	name := "joinPointMock"
+	// api := "evmCall"
+
+	hostApis := runtime.NewHostAPIRegistry()
+	// hostApis.AddApi("index", "__HostApi__", runtime.MethodName(api), func() {
+	// 	callStorage()
+	// })
+
+	pool := runtime.NewRuntimePool(10)
+	_ = pool
+
+	loop := int64(0)
+	left := loopCount % jp
+	if jp != 0 {
+		loop = loopCount / jp
+	}
+
+	key, rt, err := pool.Runtime(runtime.WASM, raw, hostApis)
+	if err != nil {
+		panic(err)
+	}
+	defer pool.Return(key, rt)
+	wasmCall := func(i, j int64) {
+		_, err = rt.Call(name, i, j)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	t1 := time.Now()
+	for i := 0; i < TIMES; i++ {
+		wasmCall(addCount, loop+left)
+		for k := int64(1); k < jp; k++ {
+			wasmCall(addCount, loop)
+		}
+	}
+	t2 := time.Now()
+	duration := t2.Sub(t1)
+	fmt.Printf("loops: %d, join point: %d, wasm call elapsed time: %d ms\n", TIMES, jp, duration.Milliseconds())
+	fmt.Printf("adds: %d, wasm call average: %d μs\n\n", addCount*loopCount, duration.Microseconds()/TIMES)
+}
+
 func BenchWasm(addCount, loopCount int64, jp int64) {
 
 	///

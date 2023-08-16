@@ -2,48 +2,43 @@ package runtime
 
 import (
 	"container/list"
-	"crypto"
 	_ "crypto/sha256"
-	"encoding/hex"
-	"fmt"
-	"reflect"
-	"sync"
 )
 
 type (
-	entry struct {
-		key     string
-		runtime AspectRuntime
-	}
+	// entry struct {
+	// 	key     string
+	// 	runtime AspectRuntime
+	// }
 
 	RuntimePool struct {
-		sync.Mutex
+		// sync.Mutex
 
-		capacity int
+		// capacity int
 
 		// list.Value = &entry
-		keys *list.List
+		//keys *list.List
 
 		// key: hash of args to build the AspectRuntime
-		cache map[string]*list.Element
+		cache map[string]AspectRuntime
 	}
 )
 
 func NewRuntimePool(capacity int) *RuntimePool {
 	return &RuntimePool{
-		capacity: capacity,
-		cache:    make(map[string]*list.Element),
-		keys:     list.New(),
+		// capacity: capacity,
+		cache: make(map[string]AspectRuntime),
+		//keys:     list.New(),
 	}
 }
 
-func (pool *RuntimePool) Capacity() int {
-	return pool.capacity
-}
+// func (pool *RuntimePool) Capacity() int {
+// 	return pool.capacity
+// }
 
-func (pool *RuntimePool) Len() int {
-	return len(pool.cache)
-}
+// func (pool *RuntimePool) Len() int {
+// 	return len(pool.cache)
+// }
 
 // RuntimeForceRefresh create a new AspectRuntime and force to refresh of runtime pool
 func (pool *RuntimePool) RuntimeForceRefresh(rtType RuntimeType, code []byte, apis *HostAPIRegistry) (string, AspectRuntime, error) {
@@ -60,44 +55,44 @@ func (pool *RuntimePool) Runtime(rtType RuntimeType, code []byte, apis *HostAPIR
 
 // Return returns a runtime to the pool
 func (pool *RuntimePool) Return(key string, runtime AspectRuntime) {
-	pool.Lock()
-	defer pool.Unlock()
+	//pool.Lock()
+	//defer pool.Unlock()
 
 	// free the hostapis and ctx injected to types, in case that go runtime GC failed
 	runtime.Destroy()
 
-	if elem, ok := pool.cache[key]; ok {
-		pool.keys.MoveToFront(elem)
-		return
-	}
+	//if elem, ok := pool.cache[key]; ok {
+	//	pool.keys.MoveToFront(elem)
+	//	return
+	//}
 
-	if pool.Len() >= pool.Capacity() {
-		// remove the last from the pool
-		last := pool.keys.Back()
-		pool.remove(last.Value.(*entry).key, last)
-	}
+	// if pool.Len() >= pool.Capacity() {
+	// 	// remove the last from the pool
+	// 	//last := pool.keys.Back()
+	// 	//pool.remove(last.Value.(*entry).key, last)
+	// }
 
 	// add new to front
 	pool.add(key, runtime)
 }
 
 func (pool *RuntimePool) get(rtType RuntimeType, code []byte, apis *HostAPIRegistry, forceRefresh bool) (string, AspectRuntime, error) {
-	pool.Lock()
-	defer pool.Unlock()
+	//pool.Lock()
+	//defer pool.Unlock()
 
-	hash := hashOfRuntimeArgs(rtType, code, apis)
-	elem, ok := pool.cache[hash]
+	hash := "a"
+	rt, ok := pool.cache[hash]
 	if ok {
 		// remove from the pool, either it is borrowed or removed.
-		pool.remove(hash, elem)
+		pool.remove(hash, nil)
 
-		if !forceRefresh {
-			rt := elem.Value.(*entry).runtime
-			if err := rt.ResetStore(apis); err == nil {
-				return hash, rt, nil
-			}
-			// if call reset failed, continue to create a new one
+		// if !forceRefresh {
+		// rt := elem
+		if err := rt.ResetStore(apis); err == nil {
+			return hash, rt, nil
 		}
+		// if call reset failed, continue to create a new one
+		// }
 	}
 
 	rt, err := NewAspectRuntime(rtType, code, apis)
@@ -110,24 +105,24 @@ func (pool *RuntimePool) get(rtType RuntimeType, code []byte, apis *HostAPIRegis
 }
 
 func (pool *RuntimePool) remove(key string, elem *list.Element) {
-	pool.keys.Remove(elem)
+	//pool.keys.Remove(elem)
 	delete(pool.cache, key)
 }
 
 func (pool *RuntimePool) add(key string, runtime AspectRuntime) {
-	new := pool.keys.PushFront(&entry{key, runtime})
-	pool.cache[key] = new
+	//new := pool.keys.PushFront(&entry{key, runtime})
+	pool.cache[key] = runtime
 }
 
-func hashOfRuntimeArgs(runtimeType RuntimeType, code []byte, apis *HostAPIRegistry) string {
-	return hex.EncodeToString(hash(runtimeType, code, apis))
-}
+// func hashOfRuntimeArgs(runtimeType RuntimeType, code []byte, apis *HostAPIRegistry) string {
+// 	return hex.EncodeToString(hash(runtimeType, code, apis))
+// }
 
-func hash(objs ...interface{}) []byte {
-	sha := crypto.SHA256.New()
-	for _, obj := range objs {
-		fmt.Fprint(sha, reflect.TypeOf(obj))
-		fmt.Fprint(sha, obj)
-	}
-	return sha.Sum(nil)
-}
+// func hash(objs ...interface{}) []byte {
+// 	sha := crypto.SHA256.New()
+// 	for _, obj := range objs {
+// 		fmt.Fprint(sha, reflect.TypeOf(obj))
+// 		fmt.Fprint(sha, obj)
+// 	}
+// 	return sha.Sum(nil)
+// }
