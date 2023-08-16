@@ -168,9 +168,7 @@ func (w *wazeroRuntime) ResetStore(apis *HostAPIRegistry) (err error) {
 		return err
 	}
 
-	w.moduleConfig = wazero.NewModuleConfig()
 	w.instance, err = w.rt.InstantiateModule(w.ctx, w.compiled, w.moduleConfig)
-
 	return
 }
 
