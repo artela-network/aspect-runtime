@@ -164,11 +164,10 @@ func storeValue(ctx *rtypes.Context, value reflect.Value) (int32, *wasmtime.Trap
 	if value.IsNil() {
 		return 0, nil, nil
 	}
-	if value.String() == "error" {
-		err := value.Interface().(error)
-		if err != nil {
-			return 0, wasmtime.NewTrap(err.Error()), nil
-		}
+
+	err, ok := value.Interface().(error)
+	if ok && err != nil {
+		return 0, wasmtime.NewTrap(err.Error()), nil
 	}
 
 	retIndex := rtypes.AssertType(value.Interface())
@@ -177,7 +176,7 @@ func storeValue(ctx *rtypes.Context, value reflect.Value) (int32, *wasmtime.Trap
 	if !ok {
 		return 0, nil, errors.Errorf("%v is not supported", value.Interface())
 	}
-	err := resType.Set(value.Interface())
+	err = resType.Set(value.Interface())
 	if err != nil {
 		return 0, nil, err
 	}
