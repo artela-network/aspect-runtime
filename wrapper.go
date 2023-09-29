@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"github.com/bytecodealliance/wasmtime-go/v9"
 	"log"
 	"reflect"
 
@@ -11,7 +12,7 @@ import (
 func Wrappers(ctx *rtypes.Context, fn interface{}) (interface{}, error) {
 	errNotSupport := errors.New("host function not supported")
 	t := reflect.TypeOf(fn)
-	if t.NumOut() > 1 {
+	if t.NumOut() > 2 {
 		return nil, errNotSupport
 	}
 
@@ -37,7 +38,7 @@ func Wrappers(ctx *rtypes.Context, fn interface{}) (interface{}, error) {
 				executeWrapper(ctx, fn, arg1, arg2, arg3)
 			}, nil
 		}
-	} else {
+	} else if t.NumOut() == 1 {
 		switch t.NumIn() {
 		case 0:
 			return func() int32 {
@@ -59,6 +60,22 @@ func Wrappers(ctx *rtypes.Context, fn interface{}) (interface{}, error) {
 				return executeWrapperAndReturn(ctx, fn, arg1, arg2, arg3)
 			}, nil
 		}
+	} else if t.NumOut() == 2 {
+		switch t.NumIn() {
+		case 0:
+			return func() int32 {
+				return executeWrapperAndReturn(ctx, fn)
+			}, nil
+		case 1:
+			return func(arg int32) (int32, *wasmtime.Trap) {
+				return2, trap := executeWrapperAndReturn2(ctx, fn, arg)
+				if trap != nil {
+					return 0, trap
+				}
+				return return2[0], nil
+			}, nil
+		}
+
 	}
 
 	return nil, errNotSupport
@@ -73,6 +90,20 @@ func executeWrapper(ctx *rtypes.Context, fn interface{}, ptrs ...int32) {
 	v.Call(args)
 }
 
+func executeWrapperAndReturn2(ctx *rtypes.Context, fn interface{}, ptrs ...int32) ([]int32, *wasmtime.Trap) {
+	args, err := paramsRead(ctx, ptrs...)
+	if err != nil {
+		log.Fatal("read params:", err)
+		return nil, nil
+	}
+	v := reflect.ValueOf(fn)
+	res := v.Call(args)
+	ptr, trap, err := paramListWrite(ctx, res)
+	if err != nil {
+		log.Fatal("write params:", err)
+	}
+	return ptr, trap
+}
 func executeWrapperAndReturn(ctx *rtypes.Context, fn interface{}, ptrs ...int32) int32 {
 	args, err := paramsRead(ctx, ptrs...)
 	if err != nil {
@@ -126,4 +157,50 @@ func paramsWrite(ctx *rtypes.Context, values []reflect.Value) (int32, error) {
 	}
 
 	return 0, nil
+}
+
+func storeValue(ctx *rtypes.Context, value reflect.Value) (int32, *wasmtime.Trap, error) {
+
+	if value.IsNil() {
+		return 0, nil, nil
+	}
+
+	err, ok := value.Interface().(error)
+	if ok && err != nil {
+		return 0, wasmtime.NewTrap(err.Error()), nil
+	}
+
+	retIndex := rtypes.AssertType(value.Interface())
+
+	resType, ok := rtypes.TypeObjectMapping[retIndex]
+	if !ok {
+		return 0, nil, errors.Errorf("%v is not supported", value.Interface())
+	}
+	err = resType.Set(value.Interface())
+	if err != nil {
+		return 0, nil, err
+	}
+	ptr, storeErr := resType.Store(ctx)
+	if storeErr != nil {
+		return 0, nil, storeErr
+	}
+	return ptr, nil, nil
+
+}
+func paramListWrite(ctx *rtypes.Context, values []reflect.Value) ([]int32, *wasmtime.Trap, error) {
+
+	int32Ary := make([]int32, len(values))
+	var wasmTrap *wasmtime.Trap
+	for i, value := range values {
+		i2, trap, err := storeValue(ctx, value)
+		if err != nil {
+			return nil, trap, err
+		}
+		if trap != nil {
+			wasmTrap = trap
+		}
+		int32Ary[i] = i2
+	}
+
+	return int32Ary, wasmTrap, nil
 }

@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"os"
 	"path"
 	"reflect"
@@ -21,6 +22,16 @@ func addApis(t *testing.T, hostApis *HostAPIRegistry) {
 	})
 	hostApis.AddApi("index", "test", "hello3", func(arg string) {
 		require.Equal(t, "greet3-hello", arg)
+	})
+	hostApis.AddApi("index", "test", "hello4", func(arg string) (string, error) {
+		return "", errors.New("error")
+	})
+}
+
+func TestAddApi(t *testing.T) {
+	hostApis := NewHostAPIRegistry()
+	hostApis.AddApi("index", "test", "hello4", func(arg string) (string, error) {
+		return "", errors.New("error")
 	})
 }
 

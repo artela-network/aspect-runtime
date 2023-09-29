@@ -221,3 +221,55 @@ func (i *Int32) Get() interface{} {
 func (i *Int32) DataType() reflect.Type {
 	return reflect.TypeOf(i.body)
 }
+
+type Int64 struct {
+	TypeHeader
+
+	body int64
+}
+
+func NewInt64() *Int64 {
+	return &Int64{
+		TypeHeader: TypeHeader{
+			dataType: int16(TypeInt64),
+		},
+	}
+}
+
+func (i *Int64) Store(ctx *Context) (int32, error) {
+	size := i.HLen() + i.dataLen
+	ptr, err := ctx.Memory().Allocate(size)
+	if err != nil {
+		return 0, errors.Wrap(err, "allocate memory")
+	}
+
+	i.HStore(ctx, ptr)
+	data := int64ToBytes(i.body)
+	ctx.Memory().Write(ptr+i.HLen(), data)
+
+	return ptr, nil
+}
+
+func (i *Int64) Load(ctx *Context, ptr int32) {
+	i.TypeHeader.HLoad(ctx, ptr)
+	data := ctx.Memory().Read(ptr+i.HLen(), i.dataLen)
+	i.body = bytesToInt64(data)
+}
+
+func (i *Int64) Set(value interface{}) error {
+	data, ok := value.(int64)
+	if !ok {
+		return errors.New("value is not bool")
+	}
+	i.dataLen = 4
+	i.body = data
+	return nil
+}
+
+func (i *Int64) Get() interface{} {
+	return i.body
+}
+
+func (i *Int64) DataType() reflect.Type {
+	return reflect.TypeOf(i.body)
+}

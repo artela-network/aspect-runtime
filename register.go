@@ -16,8 +16,9 @@ type (
 type HostAPIRegistry struct {
 	// a function defined in Module::Namesapce::MethodName
 	wrapperFuncs map[Module]map[Namesapce]map[MethodName]interface{}
-	logger       log.Logger
-	ctx          *rtypes.Context
+
+	logger log.Logger
+	ctx    *rtypes.Context
 }
 
 func NewHostAPIRegistry() *HostAPIRegistry {
