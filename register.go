@@ -9,13 +9,13 @@ import (
 
 type (
 	Module     string
-	Namesapce  string
+	NameSpace  string
 	MethodName string
 )
 
 type HostAPIRegistry struct {
-	// a function defined in Module::Namesapce::MethodName
-	wrapperFuncs map[Module]map[Namesapce]map[MethodName]interface{}
+	// a function defined in Module::Namespace::MethodName
+	wrapperFuncs map[Module]map[NameSpace]map[MethodName]interface{}
 
 	logger log.Logger
 	ctx    *rtypes.Context
@@ -23,19 +23,19 @@ type HostAPIRegistry struct {
 
 func NewHostAPIRegistry() *HostAPIRegistry {
 	return &HostAPIRegistry{
-		wrapperFuncs: make(map[Module]map[Namesapce]map[MethodName]interface{}, 0),
+		wrapperFuncs: make(map[Module]map[NameSpace]map[MethodName]interface{}, 0),
 		ctx:          rtypes.NewContext(context.Background(), nil),
 	}
 }
 
-func (h *HostAPIRegistry) AddApi(module Module, ns Namesapce, method MethodName, fn interface{}) error {
+func (h *HostAPIRegistry) AddApi(module Module, ns NameSpace, method MethodName, fn interface{}) error {
 	wrapper, err := Wrappers(h.ctx, fn)
 	if err != nil {
 		return err
 	}
 
 	if h.wrapperFuncs[module] == nil {
-		h.wrapperFuncs[module] = make(map[Namesapce]map[MethodName]interface{}, 1)
+		h.wrapperFuncs[module] = make(map[NameSpace]map[MethodName]interface{}, 1)
 	}
 
 	if h.wrapperFuncs[module][ns] == nil {
@@ -46,7 +46,7 @@ func (h *HostAPIRegistry) AddApi(module Module, ns Namesapce, method MethodName,
 	return nil
 }
 
-func (h *HostAPIRegistry) WrapperFuncs() map[Module]map[Namesapce]map[MethodName]interface{} {
+func (h *HostAPIRegistry) WrapperFuncs() map[Module]map[NameSpace]map[MethodName]interface{} {
 	return h.wrapperFuncs
 }
 

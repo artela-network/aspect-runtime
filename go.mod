@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/bytecodealliance/wasmtime-go/v9 v9.0.0
-	github.com/ethereum/go-ethereum v1.11.6
+	github.com/ethereum/go-ethereum v1.12.0
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.2
 )

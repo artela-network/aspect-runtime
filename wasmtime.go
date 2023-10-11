@@ -224,7 +224,7 @@ func defaultWASMTimeConfig() *wasmtime.Config {
 	return config
 }
 
-func buildModuleMethod(ns Namesapce, method MethodName) string {
+func buildModuleMethod(ns NameSpace, method MethodName) string {
 	return fmt.Sprintf("%s.%s", ns, method)
 }
 
