@@ -11,7 +11,7 @@ var (
 	_ IType = (*String)(nil)
 )
 
-// ByteArrary implements IType
+// ByteArray implements IType
 type ByteArray struct {
 	TypeHeader
 
