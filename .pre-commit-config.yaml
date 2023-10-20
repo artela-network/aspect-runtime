@@ -1,15 +1,13 @@
 repos:
-  -   repo: local
-      hooks:
-        -   id: make
-            name: Run Makefile format
-            entry: make format
-            language: system
-            pass_filenames: false
-            types: [shell]
-        - id: make
-          name: Run Makefile lint-fix
-          entry: make lint-fix
-          language: system
-          pass_filenames: false
-          types: [ shell ]
+  - repo: local
+    hooks:
+      - id: makeFix
+        name: Run Makefile lint
+        entry: make lint
+        language: system
+        pass_filenames: false
+      - id: makeFmt
+        name: Run Makefile format
+        entry: make format
+        language: system
+        pass_filenames: false
