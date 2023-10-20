@@ -48,10 +48,8 @@ func TestCallNormalWithPool2(t *testing.T) {
 
 	for i := 0; i < 12; i++ {
 		hostApis := NewHostAPIRegistry()
-		err := addApis(t, hostApis)
-		if err != nil {
-			return
-		}
+		addApis(t, hostApis)
+
 		key, wasmTimeRuntime, err := pool.Runtime(WASM, raw, hostApis)
 		require.Equal(t, nil, err)
 		res, err := wasmTimeRuntime.Call("testIncrease")
