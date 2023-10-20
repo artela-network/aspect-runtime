@@ -1,11 +1,9 @@
 repos:
-  -   repo: https://github.com/golangci/golangci-lint # golangci-lint hook repo
-      rev: v1.54.2 # golangci-lint hook repo revision
+  -   repo: local
       hooks:
-        - id: golangci-lint
-          name: golangci-lint
-          description: Fast linters runner for Go.
-          entry: golangci-lint run --fix
-          types: [go]
-          language: golang
-          pass_filenames: false
+        -   id: make
+            name: Run Makefile
+            entry: make format lint
+            language: system
+            pass_filenames: false
+            types: [shell]
