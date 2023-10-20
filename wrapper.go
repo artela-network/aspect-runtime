@@ -1,12 +1,14 @@
 package runtime
 
 import (
-	"github.com/bytecodealliance/wasmtime-go/v9"
 	"log"
 	"reflect"
 
-	rtypes "github.com/artela-network/runtime/types"
+	"github.com/bytecodealliance/wasmtime-go/v9"
+
 	"github.com/pkg/errors"
+
+	rtypes "github.com/artela-network/runtime/types"
 )
 
 func Wrappers(ctx *rtypes.Context, fn interface{}) (interface{}, error) {
@@ -75,7 +77,6 @@ func Wrappers(ctx *rtypes.Context, fn interface{}) (interface{}, error) {
 				return return2[0], nil
 			}, nil
 		}
-
 	}
 
 	return nil, errNotSupport
@@ -104,6 +105,7 @@ func executeWrapperAndReturn2(ctx *rtypes.Context, fn interface{}, ptrs ...int32
 	}
 	return ptr, trap
 }
+
 func executeWrapperAndReturn(ctx *rtypes.Context, fn interface{}, ptrs ...int32) int32 {
 	args, err := paramsRead(ctx, ptrs...)
 	if err != nil {
@@ -148,7 +150,10 @@ func paramsWrite(ctx *rtypes.Context, values []reflect.Value) (int32, error) {
 		if !ok {
 			return 0, errors.Errorf("%v is not supported", values[0].Interface())
 		}
-		resType.Set(values[0].Interface())
+		err := resType.Set(values[0].Interface())
+		if err != nil {
+			return 0, err
+		}
 		ptr, err := resType.Store(ctx)
 		if err != nil {
 			return -1, err
@@ -160,11 +165,9 @@ func paramsWrite(ctx *rtypes.Context, values []reflect.Value) (int32, error) {
 }
 
 func storeValue(ctx *rtypes.Context, value reflect.Value) (int32, *wasmtime.Trap, error) {
-
 	if value.IsNil() {
 		return 0, nil, nil
 	}
-
 	err, ok := value.Interface().(error)
 	if ok && err != nil {
 		return 0, wasmtime.NewTrap(err.Error()), nil
@@ -185,10 +188,9 @@ func storeValue(ctx *rtypes.Context, value reflect.Value) (int32, *wasmtime.Trap
 		return 0, nil, storeErr
 	}
 	return ptr, nil, nil
-
 }
-func paramListWrite(ctx *rtypes.Context, values []reflect.Value) ([]int32, *wasmtime.Trap, error) {
 
+func paramListWrite(ctx *rtypes.Context, values []reflect.Value) ([]int32, *wasmtime.Trap, error) {
 	int32Ary := make([]int32, len(values))
 	var wasmTrap *wasmtime.Trap
 	for i, value := range values {

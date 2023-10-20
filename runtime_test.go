@@ -2,37 +2,54 @@ package runtime
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"os"
 	"path"
 	"reflect"
 	"testing"
 
+	"github.com/pkg/errors"
+
 	"github.com/stretchr/testify/require"
 )
 
 // Helper: init hostAPI collection(@see type script impl :: declare)
-func addApis(t *testing.T, hostApis *HostAPIRegistry) {
-	hostApis.AddApi("index", "test", "hello", func(arg string) string {
+func addApis(t *testing.T, hostApis *HostAPIRegistry) error {
+	err := hostApis.AddAPI("index", "test", "hello", func(arg string) string {
 		return "hello-" + arg + "-hello"
 	})
-	hostApis.AddApi("index", "test", "hello2", func(arg1 string, arg2 string, arg3 string) string {
+	if err != nil {
+		return err
+	}
+	err = hostApis.AddAPI("index", "test", "hello2", func(arg1 string, arg2 string, arg3 string) string {
 		tmp := arg2 + arg3
 		return arg1 + "-" + tmp
 	})
-	hostApis.AddApi("index", "test", "hello3", func(arg string) {
+	if err != nil {
+		return err
+	}
+	err = hostApis.AddAPI("index", "test", "hello3", func(arg string) {
 		require.Equal(t, "greet3-hello", arg)
 	})
-	hostApis.AddApi("index", "test", "hello4", func(arg string) (string, error) {
+	if err != nil {
+		return err
+	}
+	err = hostApis.AddAPI("index", "test", "hello4", func(arg string) (string, error) {
 		return "", errors.New("error")
 	})
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func TestAddApi(t *testing.T) {
 	hostApis := NewHostAPIRegistry()
-	hostApis.AddApi("index", "test", "hello4", func(arg string) (string, error) {
+	err := hostApis.AddAPI("index", "test", "hello4", func(arg string) (string, error) {
 		return "", errors.New("error")
 	})
+	if err != nil {
+		return
+	}
 }
 
 // Test Case: empty string arg for addApi and execute
@@ -47,7 +64,10 @@ func TestCallEmptyStr(t *testing.T) {
 		wasmTimeRuntime AspectRuntime
 		err             error
 	)
-	addApis(t, hostApis)
+	err = addApis(t, hostApis)
+	if err != nil {
+		return
+	}
 
 	wasmTimeRuntime, err = NewAspectRuntime(WASM, raw, hostApis)
 	require.Equal(t, nil, err)
@@ -72,7 +92,10 @@ func TestCallNormal(t *testing.T) {
 		wasmTimeRuntime AspectRuntime
 		err             error
 	)
-	addApis(t, hostApis)
+	err2 := addApis(t, hostApis)
+	if err2 != nil {
+		return
+	}
 
 	wasmTimeRuntime, err = NewAspectRuntime(WASM, raw, hostApis)
 	require.Equal(t, nil, err)
@@ -101,7 +124,10 @@ func TestCallMultiArgs(t *testing.T) {
 		err             error
 	)
 
-	addApis(t, hostApis)
+	err = addApis(t, hostApis)
+	if err != nil {
+		return
+	}
 
 	wasmTimeRuntime, err = NewAspectRuntime(WASM, raw, hostApis)
 	require.Equal(t, nil, err)
@@ -121,7 +147,10 @@ func TestBytesNormal(t *testing.T) {
 
 	hostApis := NewHostAPIRegistry()
 
-	addApis(t, hostApis)
+	testErr := addApis(t, hostApis)
+	if testErr != nil {
+		return
+	}
 
 	var (
 		arg             []byte = []byte{0x1, 0x2, 0x3, 0x4}
@@ -144,7 +173,10 @@ func TestCallHostApiNoReturn(t *testing.T) {
 
 	hostApis := NewHostAPIRegistry()
 
-	addApis(t, hostApis)
+	errapi := addApis(t, hostApis)
+	if errapi != nil {
+		return
+	}
 
 	var (
 		arg             string = "hello"
@@ -168,7 +200,10 @@ func TestBytesNil(t *testing.T) {
 
 	hostApis := NewHostAPIRegistry()
 
-	addApis(t, hostApis)
+	addErr := addApis(t, hostApis)
+	if addErr != nil {
+		return
+	}
 
 	var (
 		arg             []byte = nil
@@ -200,7 +235,10 @@ func TestLongString(t *testing.T) {
 	for i := 1; i <= 10000; i++ {
 		arg += fmt.Sprintf("%-6d", i)
 	}
-	addApis(t, hostApis)
+	addEr := addApis(t, hostApis)
+	if addEr != nil {
+		return
+	}
 
 	wasmTimeRuntime, err = NewAspectRuntime(WASM, raw, hostApis)
 	require.Equal(t, nil, err)

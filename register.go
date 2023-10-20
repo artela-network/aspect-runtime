@@ -16,7 +16,7 @@ type (
 type HostAPIRegistry struct {
 	// a function defined in Module::Namespace::MethodName
 	wrapperFuncs map[Module]map[NameSpace]map[MethodName]interface{}
-
+	//nolint
 	logger log.Logger
 	ctx    *rtypes.Context
 }
@@ -28,7 +28,7 @@ func NewHostAPIRegistry() *HostAPIRegistry {
 	}
 }
 
-func (h *HostAPIRegistry) AddApi(module Module, ns NameSpace, method MethodName, fn interface{}) error {
+func (h *HostAPIRegistry) AddAPI(module Module, ns NameSpace, method MethodName, fn interface{}) error {
 	wrapper, err := Wrappers(h.ctx, fn)
 	if err != nil {
 		return err
