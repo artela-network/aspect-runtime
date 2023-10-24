@@ -8,7 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/pkg/errors"
 
-	rtypes "github.com/artela-network/runtime/types"
+	rtypes "github.com/artela-network/aspect-runtime/types"
 )
 
 const (

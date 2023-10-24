@@ -1,4 +1,4 @@
-module github.com/artela-network/runtime
+module github.com/artela-network/aspect-runtime
 
 go 1.20
 

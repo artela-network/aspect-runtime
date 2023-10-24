@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	rtypes "github.com/artela-network/runtime/types"
+	rtypes "github.com/artela-network/aspect-runtime/types"
 )
 
 type (
@@ -16,7 +16,7 @@ type (
 type HostAPIRegistry struct {
 	// a function defined in Module::Namespace::MethodName
 	wrapperFuncs map[Module]map[NameSpace]map[MethodName]interface{}
-	//nolint
+	// nolint
 	logger log.Logger
 	ctx    *rtypes.Context
 }

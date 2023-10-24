@@ -8,7 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	rtypes "github.com/artela-network/runtime/types"
+	rtypes "github.com/artela-network/aspect-runtime/types"
 )
 
 func Wrappers(ctx *rtypes.Context, fn interface{}) (interface{}, error) {
