@@ -17,7 +17,10 @@ func TestCallNormalWithPool(t *testing.T) {
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
 	hostApis := NewHostAPIRegistry()
-	addApis(t, hostApis)
+	err := addApis(t, hostApis)
+	if err != nil {
+		return
+	}
 
 	pool := NewRuntimePool(10)
 
@@ -45,7 +48,12 @@ func TestCallNormalWithPool2(t *testing.T) {
 
 	for i := 0; i < 12; i++ {
 		hostApis := NewHostAPIRegistry()
-		addApis(t, hostApis)
+		// nolint
+		err := addApis(t, hostApis)
+		if err != nil {
+			return
+		}
+
 		key, wasmTimeRuntime, err := pool.Runtime(WASM, raw, hostApis)
 		require.Equal(t, nil, err)
 		res, err := wasmTimeRuntime.Call("testIncrease")
@@ -63,7 +71,10 @@ func TestPoolPerformance(t *testing.T) {
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
 	hostApis := NewHostAPIRegistry()
-	addApis(t, hostApis)
+	err := addApis(t, hostApis)
+	if err != nil {
+		return
+	}
 
 	// call without pool
 	t1 := time.Now()

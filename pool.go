@@ -3,7 +3,6 @@ package runtime
 import (
 	"container/list"
 	"crypto"
-	_ "crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"reflect"
@@ -16,6 +15,7 @@ type (
 		runtime AspectRuntime
 	}
 
+	// nolint
 	RuntimePool struct {
 		sync.Mutex
 

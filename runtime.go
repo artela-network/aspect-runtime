@@ -5,7 +5,8 @@ import (
 )
 
 type (
-	engine      func(code []byte, apis *HostAPIRegistry) (out AspectRuntime, err error)
+	engine func(code []byte, apis *HostAPIRegistry) (out AspectRuntime, err error)
+	// nolint
 	RuntimeType int
 )
 
@@ -13,9 +14,7 @@ const (
 	WASM RuntimeType = iota
 )
 
-var (
-	enginePool = make(map[RuntimeType]engine)
-)
+var enginePool = make(map[RuntimeType]engine)
 
 type AspectRuntime interface {
 	Call(method string, args ...interface{}) (interface{}, error)

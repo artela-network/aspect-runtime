@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	rtypes "github.com/artela-network/runtime/types"
 	"github.com/bytecodealliance/wasmtime-go/v9"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/pkg/errors"
+
+	rtypes "github.com/artela-network/aspect-runtime/types"
 )
 
 const (
@@ -229,5 +230,5 @@ func buildModuleMethod(ns NameSpace, method MethodName) string {
 }
 
 func buildModuleName(module Module) string {
-	return fmt.Sprintf("%s", module)
+	return string(module)
 }
