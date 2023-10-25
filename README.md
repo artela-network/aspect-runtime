@@ -1,13 +1,33 @@
-# Aspect Runtime
+
+<div align="center">
+  <h1> Aspect Runtime </h1>
+</div>
+
+<div align="center">
+  <a href="https://github.com/cosmos/cosmos-sdk/blob/main/LICENSE">
+    <img alt="License: Apache-2.0" src="https://img.shields.io/github/license/cosmos/cosmos-sdk.svg" />
+  </a>
+  <a href="https://goreportcard.com/report/github.com/cosmos/cosmos-sdk">
+    <img alt="Go report card" src="https://goreportcard.com/badge/github.com/cosmos/cosmos-sdk" />
+  </a>
+  <a href="https://codecov.io/gh/cosmos/cosmos-sdk">
+    <img alt="Code Coverage" src="https://codecov.io/gh/cosmos/cosmos-sdk/branch/main/graph/badge.svg" />
+  </a>
+</div>
+
 Aspect runtime is a runtime platform for executing aspects. It is a wrapper around the bytecodealliance/wasmtime engine and supports any language that is compatible with WebAssembly (wasm). Building upon the foundation of fixed-length variables supported by wasm, Aspect runtime also enables the use of custom data structures and facilitates communication with the host environment.
 
 
 # System Overview
-- `Register`: defining host functions registered with the runtime.
-- `Runtime`: defining interfaces of aspect runtime.
-- `wasmtime`: defining wasm implement of interface.
-- `wrapper`: wrapping registered host functions and handle complex params.
-- `types`: defining all types supported as params.
+
+```shell
+├── types         // defining all types supported as params.
+├── runtime.go    // defining interfaces of aspect runtime.
+├── register.go   // defining host functions registered with the runtime.
+├── wasmtime.go   // defining wasm implement of interface.
+└── wrapper.go    // wrapping registered host functions and handle complex params.
+
+```
 
 # Usage
 1. Register the host functions
@@ -48,3 +68,8 @@ Aspect runtime is a runtime platform for executing aspects. It is a wrapper arou
     ```
 
 
+
+## License
+Copyright © Artela Network, Inc. All rights reserved.
+
+Licensed under the [Apache v2](LICENSE) License.
