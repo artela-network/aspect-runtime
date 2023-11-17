@@ -3,7 +3,7 @@ module github.com/artela-network/aspect-runtime
 go 1.20
 
 require (
-	github.com/bytecodealliance/wasmtime-go/v9 v9.0.0
+	github.com/bytecodealliance/wasmtime-go/v14 v14.0.0
 	github.com/ethereum/go-ethereum v1.12.0
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.2

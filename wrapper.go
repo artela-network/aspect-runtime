@@ -4,7 +4,7 @@ import (
 	"log"
 	"reflect"
 
-	"github.com/bytecodealliance/wasmtime-go/v9"
+	"github.com/bytecodealliance/wasmtime-go/v14"
 
 	"github.com/pkg/errors"
 
