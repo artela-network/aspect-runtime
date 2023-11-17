@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bytecodealliance/wasmtime-go/v9"
+	"github.com/bytecodealliance/wasmtime-go/v14"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/pkg/errors"
 
@@ -145,6 +145,15 @@ func (w *wasmTimeRuntime) ResetStore(apis *HostAPIRegistry) (err error) {
 func (w *wasmTimeRuntime) Destroy() {
 	w.apis.SetMemory(nil)
 	w.apis = nil
+
+	// The presence of ctx will impede the finalization of w.
+	w.ctx = nil
+
+	// Deallocate resources associated with the instance, linker, and store.
+	// These components will be reconstructed before the next invocation.
+	w.instance = nil
+	w.linker = nil
+	w.store = nil
 }
 
 func (w *wasmTimeRuntime) linkToHostFns() error {
