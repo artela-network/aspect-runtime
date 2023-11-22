@@ -261,7 +261,7 @@ func (i *Int64) Set(value interface{}) error {
 	if !ok {
 		return errors.New("value is not bool")
 	}
-	i.dataLen = 4
+	i.dataLen = 8
 	i.body = data
 	return nil
 }
