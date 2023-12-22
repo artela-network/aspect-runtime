@@ -11,6 +11,7 @@ import (
 
 type (
 	entry struct {
+		ready   bool
 		key     string
 		runtime AspectRuntime
 	}
@@ -63,8 +64,17 @@ func (pool *RuntimePool) Return(key string, runtime AspectRuntime) {
 	pool.Lock()
 	defer pool.Unlock()
 
+	wfuncs := runtime.HostFuncs()
+
 	// free the hostapis and ctx injected to types, in case that go runtime GC failed
 	runtime.Destroy()
+
+	ready := false
+	registry := &HostAPIRegistry{}
+	registry.AddFuncs(wfuncs)
+	if err := runtime.ResetStore(registry); err == nil {
+		ready = true
+	}
 
 	if elem, ok := pool.cache[key]; ok {
 		pool.keys.MoveToFront(elem)
@@ -78,7 +88,7 @@ func (pool *RuntimePool) Return(key string, runtime AspectRuntime) {
 	}
 
 	// add new to front
-	pool.add(key, runtime)
+	pool.add(key, runtime, ready)
 }
 
 func (pool *RuntimePool) get(rtType RuntimeType, code []byte, apis *HostAPIRegistry, forceRefresh bool) (string, AspectRuntime, error) {
@@ -93,6 +103,10 @@ func (pool *RuntimePool) get(rtType RuntimeType, code []byte, apis *HostAPIRegis
 
 		if !forceRefresh {
 			rt := elem.Value.(*entry).runtime
+			if elem.Value.(*entry).ready {
+				return hash, rt, nil
+			}
+
 			if err := rt.ResetStore(apis); err == nil {
 				return hash, rt, nil
 			}
@@ -114,8 +128,12 @@ func (pool *RuntimePool) remove(key string, elem *list.Element) {
 	delete(pool.cache, key)
 }
 
-func (pool *RuntimePool) add(key string, runtime AspectRuntime) {
-	new := pool.keys.PushFront(&entry{key, runtime})
+func (pool *RuntimePool) add(key string, runtime AspectRuntime, ready bool) {
+	new := pool.keys.PushFront(&entry{
+		ready:   ready,
+		key:     key,
+		runtime: runtime,
+	})
 	pool.cache[key] = new
 }
 

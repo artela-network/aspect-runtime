@@ -11,11 +11,13 @@ type (
 	Module     string
 	NameSpace  string
 	MethodName string
+
+	WFuncs map[Module]map[NameSpace]map[MethodName]interface{}
 )
 
 type HostAPIRegistry struct {
 	// a function defined in Module::Namespace::MethodName
-	wrapperFuncs map[Module]map[NameSpace]map[MethodName]interface{}
+	wrapperFuncs WFuncs
 	// nolint
 	logger log.Logger
 	ctx    *rtypes.Context
@@ -23,9 +25,14 @@ type HostAPIRegistry struct {
 
 func NewHostAPIRegistry() *HostAPIRegistry {
 	return &HostAPIRegistry{
-		wrapperFuncs: make(map[Module]map[NameSpace]map[MethodName]interface{}, 0),
+		wrapperFuncs: make(WFuncs, 0),
 		ctx:          rtypes.NewContext(context.Background(), nil),
 	}
+}
+
+func (h *HostAPIRegistry) AddFuncs(funcs WFuncs) error {
+	h.wrapperFuncs = funcs
+	return nil
 }
 
 func (h *HostAPIRegistry) AddAPI(module Module, ns NameSpace, method MethodName, fn interface{}) error {
@@ -46,7 +53,7 @@ func (h *HostAPIRegistry) AddAPI(module Module, ns NameSpace, method MethodName,
 	return nil
 }
 
-func (h *HostAPIRegistry) WrapperFuncs() map[Module]map[NameSpace]map[MethodName]interface{} {
+func (h *HostAPIRegistry) WrapperFuncs() WFuncs {
 	return h.wrapperFuncs
 }
 

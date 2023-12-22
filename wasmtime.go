@@ -156,6 +156,10 @@ func (w *wasmTimeRuntime) Destroy() {
 	w.store = nil
 }
 
+func (w *wasmTimeRuntime) HostFuncs() WFuncs {
+	return w.apis.WrapperFuncs()
+}
+
 func (w *wasmTimeRuntime) linkToHostFns() error {
 	for module, namespaces := range w.apis.WrapperFuncs() {
 		for ns, methods := range namespaces {

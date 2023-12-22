@@ -91,7 +91,7 @@ func (s *String) Store(ctx *Context) (int32, error) {
 }
 
 func (s *String) Load(ctx *Context, ptr int32) {
-	s.TypeHeader.HLoad(ctx, ptr)
+	// s.TypeHeader.HLoad(ctx, ptr)
 	s.body = string(ctx.Memory().Read(ptr+s.HLen(), s.dataLen))
 }
 
