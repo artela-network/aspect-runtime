@@ -106,11 +106,16 @@ func (w *wasmTimeRuntime) Call(method string, args ...interface{}) (interface{},
 		return nil, errors.Errorf("read output failed, value: %s", val)
 	}
 
+	if ptr == 0 {
+		// void functions this will be 0
+		return nil, nil
+	}
+
 	h := &rtypes.TypeHeader{}
 	h.HLoad(w.ctx, ptr)
 	resType, ok := rtypes.TypeObjectMapping[h.DataType()]
 	if !ok {
-		return nil, errors.Errorf("read param failed, type %d not found", resType)
+		return nil, errors.Errorf("read param failed, type %d not found", h.DataType())
 	}
 
 	resType.Load(w.ctx, ptr)
