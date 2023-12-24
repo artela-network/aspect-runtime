@@ -3,10 +3,10 @@ package runtime
 import (
 	"context"
 	"fmt"
-
 	"github.com/bytecodealliance/wasmtime-go/v14"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/pkg/errors"
+	"runtime/debug"
 
 	rtypes "github.com/artela-network/aspect-runtime/types"
 )
@@ -55,6 +55,12 @@ func NewWASMTimeRuntime(code []byte, apis *HostAPIRegistry) (out AspectRuntime, 
 	}
 
 	// instantiate module and store
+	defer func() {
+		if r := recover(); r != nil {
+			err = errors.New(fmt.Sprintln(r))
+			log.Error("failed to create wasm instance", "err", r, "stack", debug.Stack())
+		}
+	}()
 	watvm.instance, err = watvm.linker.Instantiate(watvm.store, watvm.module)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to instantiate wasm module")

@@ -85,7 +85,7 @@ func Wrappers(ctx *rtypes.Context, fn interface{}) (interface{}, error) {
 func executeWrapper(ctx *rtypes.Context, fn interface{}, ptrs ...int32) {
 	args, err := paramsRead(ctx, ptrs...)
 	if err != nil {
-		log.Fatal("read params:", err)
+		log.Panicln("read params:", err)
 	}
 	v := reflect.ValueOf(fn)
 	v.Call(args)
@@ -94,14 +94,14 @@ func executeWrapper(ctx *rtypes.Context, fn interface{}, ptrs ...int32) {
 func executeWrapperAndReturn2(ctx *rtypes.Context, fn interface{}, ptrs ...int32) ([]int32, *wasmtime.Trap) {
 	args, err := paramsRead(ctx, ptrs...)
 	if err != nil {
-		log.Fatal("read params:", err)
+		log.Panicln("read params:", err)
 		return nil, nil
 	}
 	v := reflect.ValueOf(fn)
 	res := v.Call(args)
 	ptr, trap, err := paramListWrite(ctx, res)
 	if err != nil {
-		log.Fatal("write params:", err)
+		log.Panicln("write params:", err)
 	}
 	return ptr, trap
 }
@@ -109,14 +109,14 @@ func executeWrapperAndReturn2(ctx *rtypes.Context, fn interface{}, ptrs ...int32
 func executeWrapperAndReturn(ctx *rtypes.Context, fn interface{}, ptrs ...int32) int32 {
 	args, err := paramsRead(ctx, ptrs...)
 	if err != nil {
-		log.Fatal("read params:", err)
+		log.Println("read params:", err)
 		return -1
 	}
 	v := reflect.ValueOf(fn)
 	res := v.Call(args)
 	ptr, err := paramsWrite(ctx, res)
 	if err != nil {
-		log.Fatal("write params:", err)
+		log.Panicln("write params:", err)
 	}
 	return ptr
 }
@@ -129,8 +129,7 @@ func paramsRead(ctx *rtypes.Context, ptrs ...int32) ([]reflect.Value, error) {
 		h.HLoad(ctx, ptr)
 		reqType, ok := rtypes.TypeObjectMapping[h.DataType()]
 		if !ok {
-			log.Fatalf("type index %d is not valid", h.DataType())
-			log.Fatalf("type index %d is not valid", h.DataType())
+			log.Printf("type index %d is not valid", h.DataType())
 			return nil, errors.New("read param failed")
 		}
 		reqType.Load(ctx, ptr)
