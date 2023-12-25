@@ -24,7 +24,7 @@ func (m *Memory) Read(ptr int32, size int32) []byte {
 	data := m.data()[ptr : ptr+size]
 	copied := make([]byte, len(data))
 	copy(copied, data)
-	return data
+	return copied
 }
 
 // Allocate allocate a contiguous space on linear memory
