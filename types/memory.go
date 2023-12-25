@@ -17,14 +17,14 @@ func NewMemory(data func() []byte, alloc func(int32) (int32, error)) *Memory {
 // Data return the whole linear memory.
 func (m *Memory) Write(ptr int32, data []byte) {
 	buf := m.data()
-	for i := 0; i < len(data); i++ {
-		buf[ptr] = data[i]
-		ptr++
-	}
+	copy(buf[ptr:], data[:])
 }
 
 func (m *Memory) Read(ptr int32, size int32) []byte {
-	return m.data()[ptr : ptr+size]
+	data := m.data()[ptr : ptr+size]
+	copied := make([]byte, len(data))
+	copy(copied, data)
+	return data
 }
 
 // Allocate allocate a contiguous space on linear memory

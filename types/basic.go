@@ -45,6 +45,9 @@ func (b *ByteArray) Load(ctx *Context, ptr int32) {
 }
 
 func (b *ByteArray) Set(value interface{}) error {
+	if value == nil {
+		value = []byte{}
+	}
 	data, ok := value.([]byte)
 	if !ok {
 		return errors.New("value is not []byte")
