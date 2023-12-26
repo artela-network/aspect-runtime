@@ -3,10 +3,10 @@ package runtime
 import (
 	"context"
 	"fmt"
-
 	"github.com/bytecodealliance/wasmtime-go/v14"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/pkg/errors"
+	"runtime/debug"
 
 	rtypes "github.com/artela-network/aspect-runtime/types"
 )
@@ -55,6 +55,12 @@ func NewWASMTimeRuntime(code []byte, apis *HostAPIRegistry) (out AspectRuntime, 
 	}
 
 	// instantiate module and store
+	defer func() {
+		if r := recover(); r != nil {
+			err = errors.New(fmt.Sprintln(r))
+			log.Error("failed to create wasm instance", "err", r, "stack", debug.Stack())
+		}
+	}()
 	watvm.instance, err = watvm.linker.Instantiate(watvm.store, watvm.module)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to instantiate wasm module")
@@ -100,11 +106,16 @@ func (w *wasmTimeRuntime) Call(method string, args ...interface{}) (interface{},
 		return nil, errors.Errorf("read output failed, value: %s", val)
 	}
 
+	if ptr == 0 {
+		// void functions this will be 0
+		return nil, nil
+	}
+
 	h := &rtypes.TypeHeader{}
 	h.HLoad(w.ctx, ptr)
 	resType, ok := rtypes.TypeObjectMapping[h.DataType()]
 	if !ok {
-		return nil, errors.Errorf("read param failed, type %d not found", resType)
+		return nil, errors.Errorf("read param failed, type %d not found", h.DataType())
 	}
 
 	resType.Load(w.ctx, ptr)
