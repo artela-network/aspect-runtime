@@ -283,8 +283,8 @@ type UInt64 struct {
 	body uint64
 }
 
-func NewUInt64() *Int64 {
-	return &Int64{
+func NewUInt64() *UInt64 {
+	return &UInt64{
 		TypeHeader: TypeHeader{
 			dataType: int16(TypeUint64),
 		},
