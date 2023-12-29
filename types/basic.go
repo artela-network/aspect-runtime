@@ -210,7 +210,7 @@ func (i *Int32) Load(ctx *Context, ptr int32) {
 func (i *Int32) Set(value interface{}) error {
 	data, ok := value.(int32)
 	if !ok {
-		return errors.New("value is not bool")
+		return errors.New("value is not int32")
 	}
 	i.dataLen = 4
 	i.body = data
@@ -262,7 +262,7 @@ func (i *Int64) Load(ctx *Context, ptr int32) {
 func (i *Int64) Set(value interface{}) error {
 	data, ok := value.(int64)
 	if !ok {
-		return errors.New("value is not bool")
+		return errors.New("value is not int64")
 	}
 	i.dataLen = 8
 	i.body = data
@@ -314,7 +314,7 @@ func (i *UInt64) Load(ctx *Context, ptr int32) {
 func (i *UInt64) Set(value interface{}) error {
 	data, ok := value.(uint64)
 	if !ok {
-		return errors.New("value is not bool")
+		return errors.New("value is not uint64")
 	}
 	i.dataLen = 8
 	i.body = data
