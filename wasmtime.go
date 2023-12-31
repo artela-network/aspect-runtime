@@ -3,10 +3,13 @@ package runtime
 import (
 	"context"
 	"fmt"
+	"runtime"
+	"runtime/debug"
+	"sync/atomic"
+
 	"github.com/bytecodealliance/wasmtime-go/v14"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/pkg/errors"
-	"runtime/debug"
 
 	rtypes "github.com/artela-network/aspect-runtime/types"
 )
@@ -69,8 +72,17 @@ func NewWASMTimeRuntime(code []byte, apis *HostAPIRegistry) (out AspectRuntime, 
 	watvm.setCtx()
 	apis.SetMemory(watvm.ctx.Memory())
 
+	wasmTimeRuntimeCount.Store(wasmTimeRuntimeCount.Load() + 1)
+	log.Info("---creating watvm", wasmTimeRuntimeCount.Load())
+	runtime.SetFinalizer(watvm, func(watvm *wasmTimeRuntime) {
+		wasmTimeRuntimeCount.Store(wasmTimeRuntimeCount.Load() - 1)
+		log.Info("---freeing watvm", wasmTimeRuntimeCount.Load())
+	})
+
 	return watvm, err
 }
+
+var wasmTimeRuntimeCount atomic.Int32
 
 // Call wasm
 func (w *wasmTimeRuntime) Call(method string, args ...interface{}) (interface{}, error) {

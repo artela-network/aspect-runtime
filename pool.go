@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"reflect"
 	"sync"
+
+	"github.com/ethereum/go-ethereum/log"
 )
 
 type (
@@ -30,6 +32,7 @@ type (
 )
 
 func NewRuntimePool(capacity int) *RuntimePool {
+	log.Info("---NewRuntimePool: ", capacity)
 	return &RuntimePool{
 		capacity: capacity,
 		cache:    make(map[string]*list.Element),
@@ -63,8 +66,10 @@ func (pool *RuntimePool) Return(key string, runtime AspectRuntime) {
 	pool.Lock()
 	defer pool.Unlock()
 
+	log.Info(fmt.Sprintf("---RuntimePool before Return,  cache len: %d, cache: %+v", len(pool.cache), pool.cache))
 	// free the hostapis and ctx injected to types, in case that go runtime GC failed
 	runtime.Destroy()
+	log.Info("---destory runtime: ", key)
 
 	if elem, ok := pool.cache[key]; ok {
 		pool.keys.MoveToFront(elem)
@@ -79,20 +84,26 @@ func (pool *RuntimePool) Return(key string, runtime AspectRuntime) {
 
 	// add new to front
 	pool.add(key, runtime)
+
+	log.Info(fmt.Sprintf("---RuntimePool after Return,  cache len: %d, cache: %+v", len(pool.cache), pool.cache))
 }
 
 func (pool *RuntimePool) get(rtType RuntimeType, code []byte, apis *HostAPIRegistry, forceRefresh bool) (string, AspectRuntime, error) {
 	pool.Lock()
 	defer pool.Unlock()
 
+	log.Info(fmt.Sprintf("---RuntimePool get, cache len: %d, cache: %+v", len(pool.cache), pool.cache))
 	hash := hashOfRuntimeArgs(rtType, code)
+	log.Info("---get hash: ", hash)
 	elem, ok := pool.cache[hash]
 	if ok {
+		log.Info("---found")
 		// remove from the pool, either it is borrowed or removed.
 		pool.remove(hash, elem)
 
 		if !forceRefresh {
 			rt := elem.Value.(*entry).runtime
+			log.Info("---ResetStore of key: ", hash)
 			if err := rt.ResetStore(apis); err == nil {
 				return hash, rt, nil
 			}
@@ -100,6 +111,7 @@ func (pool *RuntimePool) get(rtType RuntimeType, code []byte, apis *HostAPIRegis
 		}
 	}
 
+	log.Info("---not found, creating NewAspectRuntime")
 	rt, err := NewAspectRuntime(rtType, code, apis)
 	if err != nil {
 		return "", nil, err
@@ -110,6 +122,7 @@ func (pool *RuntimePool) get(rtType RuntimeType, code []byte, apis *HostAPIRegis
 }
 
 func (pool *RuntimePool) remove(key string, elem *list.Element) {
+	log.Info(fmt.Sprintf("---removed from pool, key: %s, cache len: %d, cache: %+v", key, len(pool.cache), pool.cache))
 	pool.keys.Remove(elem)
 	delete(pool.cache, key)
 }
