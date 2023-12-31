@@ -73,10 +73,10 @@ func NewWASMTimeRuntime(code []byte, apis *HostAPIRegistry) (out AspectRuntime, 
 	apis.SetMemory(watvm.ctx.Memory())
 
 	wasmTimeRuntimeCount.Store(wasmTimeRuntimeCount.Load() + 1)
-	log.Info("---creating watvm", wasmTimeRuntimeCount.Load())
+	log.Info(fmt.Sprintf("---creating watvm, total count: %d", wasmTimeRuntimeCount.Load()))
 	runtime.SetFinalizer(watvm, func(watvm *wasmTimeRuntime) {
 		wasmTimeRuntimeCount.Store(wasmTimeRuntimeCount.Load() - 1)
-		log.Info("---freeing watvm", wasmTimeRuntimeCount.Load())
+		log.Info(fmt.Sprintf("---freeing watvm, total count: %d", wasmTimeRuntimeCount.Load()))
 	})
 
 	return watvm, err

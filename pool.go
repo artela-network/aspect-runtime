@@ -32,7 +32,7 @@ type (
 )
 
 func NewRuntimePool(capacity int) *RuntimePool {
-	log.Info("---NewRuntimePool: ", capacity)
+	log.Info(fmt.Sprintf("---NewRuntimePool: %d", capacity))
 	return &RuntimePool{
 		capacity: capacity,
 		cache:    make(map[string]*list.Element),
@@ -69,7 +69,7 @@ func (pool *RuntimePool) Return(key string, runtime AspectRuntime) {
 	log.Info(fmt.Sprintf("---RuntimePool before Return,  cache len: %d, cache: %+v", len(pool.cache), pool.cache))
 	// free the hostapis and ctx injected to types, in case that go runtime GC failed
 	runtime.Destroy()
-	log.Info("---destory runtime: ", key)
+	log.Info(fmt.Sprintf("---destory runtime: %s", key))
 
 	if elem, ok := pool.cache[key]; ok {
 		pool.keys.MoveToFront(elem)
@@ -94,7 +94,7 @@ func (pool *RuntimePool) get(rtType RuntimeType, code []byte, apis *HostAPIRegis
 
 	log.Info(fmt.Sprintf("---RuntimePool get, cache len: %d, cache: %+v", len(pool.cache), pool.cache))
 	hash := hashOfRuntimeArgs(rtType, code)
-	log.Info("---get hash: ", hash)
+	log.Info(fmt.Sprintf("---get hash: %s", hash))
 	elem, ok := pool.cache[hash]
 	if ok {
 		log.Info("---found")
