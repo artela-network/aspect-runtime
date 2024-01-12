@@ -1,77 +1,38 @@
-package runtimetypes
+package types
 
 import (
 	"context"
-	"reflect"
-	"unsafe"
+
+	"github.com/bytecodealliance/wasmtime-go/v14"
 )
 
 // IType is the interface of all runtime types
 type IType interface {
-	// Store write value to linear memory,
-	// and return the start address
-	Store(ctx *Context) (int32, error)
+	// Marshal serialize the type to byte array
+	Marshal(value interface{}) []byte
 
-	// Load read value from linear memory with the given ptr
-	Load(ctx *Context, ptr int32)
-
-	Set(value interface{}) error
-	Get() interface{}
-
-	DataType() reflect.Type
+	// Unmarshal desialize the data to the type
+	Unmarshal(data []byte) (interface{}, error)
 }
 
 type Context struct {
 	context.Context
 
-	memory *Memory
+	// memory *Memory
+	Instance *wasmtime.Instance
+	Store    *wasmtime.Store
 }
 
-func NewContext(ctx context.Context, memory *Memory) *Context {
+func NewContext(ctx context.Context) *Context {
 	return &Context{
 		Context: ctx,
-		memory:  memory,
 	}
 }
 
-func (c *Context) Memory() *Memory {
-	return c.memory
-}
-
-func (c *Context) SetMemory(mem *Memory) {
-	c.memory = mem
-}
-
-type TypeHeader struct {
-	dataType int16
-
-	// the length of basic data, or 4 for reference type
-	dataLen int32
-}
-
-// HStore write header to memory, little endian
-func (header *TypeHeader) HStore(ctx *Context, ptr int32) {
-	var t [2]byte
-	t[0] = uint8(header.dataType)
-	t[1] = uint8(header.dataType >> 8)
-	ctx.memory.Write(ptr, t[:])
-
-	l := int32ToBytes(header.dataLen)
-	ctx.memory.Write(ptr+2, l)
-}
-
-func (header *TypeHeader) HLoad(ctx *Context, ptr int32) {
-	t := ctx.memory.Read(ptr, 2)
-	header.dataType = int16(t[0]) + int16(t[1])<<8
-
-	data := ctx.memory.Read(ptr+2, 4)
-	header.dataLen = bytesToInt32(data)
-}
-
-func (header *TypeHeader) HLen() int32 {
-	return int32(unsafe.Sizeof(header.dataType) + unsafe.Sizeof(header.dataLen))
-}
-
-func (header *TypeHeader) DataType() TypeIndex {
-	return TypeIndex(header.dataType)
+func (c *Context) SetInstance(
+	instance *wasmtime.Instance,
+	store *wasmtime.Store,
+) {
+	c.Instance = instance
+	c.Store = store
 }

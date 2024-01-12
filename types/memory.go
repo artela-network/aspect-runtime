@@ -1,4 +1,4 @@
-package runtimetypes
+package types
 
 import "errors"
 
