@@ -1,4 +1,6 @@
-package runtimetypes
+package types
+
+import "github.com/pkg/errors"
 
 // TypeIndex defines the index of runtime type
 type TypeIndex int16
@@ -17,15 +19,6 @@ const (
 	TypeString // string with utf-8 encoder
 	TypeByteArray
 )
-
-var TypeObjectMapping = map[TypeIndex]IType{
-	TypeByteArray: NewByteArrary(),
-	TypeString:    NewString(),
-	TypeBool:      NewBool(),
-	TypeInt32:     NewInt32(),
-	TypeInt64:     NewInt64(),
-	TypeUint64:    NewUInt64(),
-}
 
 func AssertType(v interface{}) TypeIndex {
 	switch v.(type) {
@@ -57,4 +50,22 @@ func AssertType(v interface{}) TypeIndex {
 		// return TypeMyStruct
 	}
 	return TypeEmpty
+}
+
+func TypeObjectMapping(index TypeIndex) (IType, error) {
+	switch index {
+	case TypeByteArray:
+		return NewByteArrary(), nil
+	case TypeString:
+		return NewString(), nil
+	case TypeBool:
+		return NewBool(), nil
+	case TypeInt32:
+		return NewInt32(), nil
+	case TypeInt64:
+		return NewInt64(), nil
+	case TypeUint64:
+		return NewUint64(), nil
+	}
+	return nil, errors.Errorf("type of index %d is not valid", index)
 }

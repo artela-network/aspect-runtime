@@ -8,10 +8,10 @@ import (
 
 	"github.com/pkg/errors"
 
-	rtypes "github.com/artela-network/aspect-runtime/types"
+	types "github.com/artela-network/aspect-runtime/types"
 )
 
-func Wrappers(ctx *rtypes.Context, fn interface{}) (interface{}, error) {
+func Wrappers(ctx *types.Context, fn interface{}) (interface{}, error) {
 	errNotSupport := errors.New("host function not supported")
 	t := reflect.TypeOf(fn)
 	if t.NumOut() > 2 {
@@ -82,7 +82,7 @@ func Wrappers(ctx *rtypes.Context, fn interface{}) (interface{}, error) {
 	return nil, errNotSupport
 }
 
-func executeWrapper(ctx *rtypes.Context, fn interface{}, ptrs ...int32) {
+func executeWrapper(ctx *types.Context, fn interface{}, ptrs ...int32) {
 	args, err := paramsRead(ctx, ptrs...)
 	if err != nil {
 		log.Panicln("read params:", err)
@@ -91,22 +91,21 @@ func executeWrapper(ctx *rtypes.Context, fn interface{}, ptrs ...int32) {
 	v.Call(args)
 }
 
-func executeWrapperAndReturn2(ctx *rtypes.Context, fn interface{}, ptrs ...int32) ([]int32, *wasmtime.Trap) {
+func executeWrapperAndReturn2(ctx *types.Context, fn interface{}, ptrs ...int32) ([]int32, *wasmtime.Trap) {
 	args, err := paramsRead(ctx, ptrs...)
 	if err != nil {
 		log.Panicln("read params:", err)
-		return nil, nil
 	}
 	v := reflect.ValueOf(fn)
 	res := v.Call(args)
 	ptr, trap, err := paramListWrite(ctx, res)
 	if err != nil {
-		log.Panicln("write params:", err)
+		log.Panicln("write params list:", err)
 	}
 	return ptr, trap
 }
 
-func executeWrapperAndReturn(ctx *rtypes.Context, fn interface{}, ptrs ...int32) int32 {
+func executeWrapperAndReturn(ctx *types.Context, fn interface{}, ptrs ...int32) int32 {
 	args, err := paramsRead(ctx, ptrs...)
 	if err != nil {
 		log.Println("read params:", err)
@@ -121,49 +120,76 @@ func executeWrapperAndReturn(ctx *rtypes.Context, fn interface{}, ptrs ...int32)
 	return ptr
 }
 
-func paramsRead(ctx *rtypes.Context, ptrs ...int32) ([]reflect.Value, error) {
+var memory = func(instance *wasmtime.Instance, store *wasmtime.Store) []byte {
+	return instance.GetExport(store, "memory").Memory().UnsafeData(store)
+}
+var alloc = func(instance *wasmtime.Instance, store *wasmtime.Store, size int32) (int32, error) {
+	memoryAllocator := instance.GetFunc(store, "allocate")
+	if memoryAllocator == nil {
+		return 0, errors.New("function 'allocate' does not exist")
+	}
+
+	res, err := memoryAllocator.Call(store, size)
+	if err != nil {
+		return 0, err
+	}
+
+	return res.(int32), nil
+}
+
+func paramsRead(ctx *types.Context, ptrs ...int32) ([]reflect.Value, error) {
 	args := make([]reflect.Value, len(ptrs))
 
 	for i, ptr := range ptrs {
-		h := &rtypes.TypeHeader{}
-		h.HLoad(ctx, ptr)
-		reqType, ok := rtypes.TypeObjectMapping[h.DataType()]
-		if !ok {
-			log.Printf("type index %d is not valid", h.DataType())
-			return nil, errors.New("read param failed")
+		h := &types.TypeHeader{}
+		buf := memory(ctx.Instance, ctx.Store)
+		header := make([]byte, types.HeaderLen)
+		copy(header, buf[ptr:ptr+6])
+		dataType, dataLen, err := h.Unmarshal(header)
+		if err != nil {
+			return nil, err
 		}
-		reqType.Load(ctx, ptr)
-		args[i] = reflect.ValueOf(reqType.Get())
+		reqType, err := types.TypeObjectMapping(dataType)
+		if err != nil {
+			return nil, err
+		}
+		reqData := make([]byte, types.HeaderLen+dataLen)
+		copy(reqData, buf[ptr:ptr+types.HeaderLen+dataLen])
+		value, err := reqType.Unmarshal(reqData)
+		if err != nil {
+			return nil, err
+		}
+		args[i] = reflect.ValueOf(value)
 	}
 	return args, nil
 }
 
-func paramsWrite(ctx *rtypes.Context, values []reflect.Value) (int32, error) {
+func paramsWrite(ctx *types.Context, values []reflect.Value) (int32, error) {
 	if len(values) > 1 {
 		return -1, errors.New("values count is expected to 1")
 	}
 
 	if len(values) == 1 {
-		retIndex := rtypes.AssertType(values[0].Interface())
-		resType, ok := rtypes.TypeObjectMapping[retIndex]
-		if !ok {
-			return 0, errors.Errorf("%v is not supported", values[0].Interface())
-		}
-		err := resType.Set(values[0].Interface())
+		retIndex := types.AssertType(values[0].Interface())
+		resType, err := types.TypeObjectMapping(retIndex)
 		if err != nil {
 			return 0, err
 		}
-		ptr, err := resType.Store(ctx)
+		data := resType.Marshal(values[0].Interface())
+		ptr, err := alloc(ctx.Instance, ctx.Store, int32(len(data)))
 		if err != nil {
-			return -1, err
+			panic(err)
 		}
+		buf := memory(ctx.Instance, ctx.Store)
+		copy(buf[ptr:], data)
+
 		return ptr, nil
 	}
 
 	return 0, nil
 }
 
-func storeValue(ctx *rtypes.Context, value reflect.Value) (int32, *wasmtime.Trap, error) {
+func storeValue(ctx *types.Context, value reflect.Value) (int32, *wasmtime.Trap, error) {
 	if value.IsNil() {
 		return 0, nil, nil
 	}
@@ -172,24 +198,25 @@ func storeValue(ctx *rtypes.Context, value reflect.Value) (int32, *wasmtime.Trap
 		return 0, wasmtime.NewTrap(err.Error()), nil
 	}
 
-	retIndex := rtypes.AssertType(value.Interface())
+	retIndex := types.AssertType(value.Interface())
 
-	resType, ok := rtypes.TypeObjectMapping[retIndex]
-	if !ok {
-		return 0, nil, errors.Errorf("%v is not supported", value.Interface())
-	}
-	err = resType.Set(value.Interface())
+	resType, err := types.TypeObjectMapping(retIndex)
 	if err != nil {
 		return 0, nil, err
 	}
-	ptr, storeErr := resType.Store(ctx)
-	if storeErr != nil {
-		return 0, nil, storeErr
+
+	data := resType.Marshal(value.Interface())
+	ptr, err := alloc(ctx.Instance, ctx.Store, int32(len(data)))
+	if err != nil {
+		panic(err)
 	}
+	buf := memory(ctx.Instance, ctx.Store)
+	copy(buf[ptr:], data)
+
 	return ptr, nil, nil
 }
 
-func paramListWrite(ctx *rtypes.Context, values []reflect.Value) ([]int32, *wasmtime.Trap, error) {
+func paramListWrite(ctx *types.Context, values []reflect.Value) ([]int32, *wasmtime.Trap, error) {
 	int32Ary := make([]int32, len(values))
 	var wasmTrap *wasmtime.Trap
 	for i, value := range values {

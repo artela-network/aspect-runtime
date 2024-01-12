@@ -74,7 +74,8 @@ func (pool *RuntimePool) Return(key string, runtime AspectRuntime) {
 	if pool.Len() >= pool.Capacity() {
 		// remove the last from the pool
 		last := pool.keys.Back()
-		pool.remove(last.Value.(*entry).key, last)
+		entry := last.Value.(*entry)
+		pool.remove(entry.key, last)
 	}
 
 	// add new to front

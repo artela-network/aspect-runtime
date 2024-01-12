@@ -5,6 +5,7 @@ import (
 	"log"
 
 	rtypes "github.com/artela-network/aspect-runtime/types"
+	"github.com/bytecodealliance/wasmtime-go/v14"
 )
 
 type (
@@ -24,7 +25,7 @@ type HostAPIRegistry struct {
 func NewHostAPIRegistry() *HostAPIRegistry {
 	return &HostAPIRegistry{
 		wrapperFuncs: make(map[Module]map[NameSpace]map[MethodName]interface{}, 0),
-		ctx:          rtypes.NewContext(context.Background(), nil),
+		ctx:          rtypes.NewContext(context.Background()),
 	}
 }
 
@@ -50,10 +51,13 @@ func (h *HostAPIRegistry) WrapperFuncs() map[Module]map[NameSpace]map[MethodName
 	return h.wrapperFuncs
 }
 
-func (h *HostAPIRegistry) SetMemory(mem *rtypes.Memory) {
+func (h *HostAPIRegistry) SetInstance(
+	instance *wasmtime.Instance,
+	store *wasmtime.Store,
+) {
 	if h.ctx == nil {
-		h.ctx = rtypes.NewContext(context.Background(), mem)
-		return
+		h.ctx = rtypes.NewContext(context.Background())
 	}
-	h.ctx.SetMemory(mem)
+
+	h.ctx.SetInstance(instance, store)
 }

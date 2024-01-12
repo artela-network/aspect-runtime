@@ -1,330 +1,281 @@
-package runtimetypes
+package types
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/pkg/errors"
 )
 
+const (
+	HeaderDataType = 2
+	HeaderDataLen  = 4
+	HeaderLen      = 6
+)
+
 var (
 	_ IType = (*ByteArray)(nil)
 	_ IType = (*String)(nil)
+	_ IType = (*Bool)(nil)
+	_ IType = (*Int32)(nil)
+	_ IType = (*Int64)(nil)
+	_ IType = (*Uint64)(nil)
 )
+
+type TypeHeader struct{}
+
+func (t *TypeHeader) Marshal(dataType TypeIndex, dataLen int32) []byte {
+	var data [HeaderLen]byte
+	data[0] = uint8(dataType)
+	data[1] = uint8(dataType >> 8)
+
+	dlen := int32ToBytes(dataLen)
+	copy(data[2:], dlen)
+
+	return data[:]
+}
+
+// Unmarshal desialize the data to the type
+func (t *TypeHeader) Unmarshal(data []byte) (dataType TypeIndex, dataLen int32, err error) {
+	if len(data) < HeaderLen {
+		return 0, 0, errors.New("data is not valid, read header failed")
+	}
+
+	dataType = TypeIndex(int16(data[0]) + int16(data[1])<<8)
+	dataLen = bytesToInt32(data[2:6])
+	return dataType, dataLen, nil
+}
 
 // ByteArray implements IType
 type ByteArray struct {
-	TypeHeader
-
-	body []byte
+	dataType TypeIndex
+	dataLen  int32
 }
 
 func NewByteArrary() *ByteArray {
-	return &ByteArray{
-		TypeHeader: TypeHeader{
-			dataType: int16(TypeByteArray),
-		},
-	}
+	return &ByteArray{dataType: TypeByteArray}
 }
 
-func (b *ByteArray) Store(ctx *Context) (int32, error) {
-	size := b.HLen() + b.dataLen
-	ptr, err := ctx.Memory().Allocate(size)
-	if err != nil {
-		return 0, errors.Wrap(err, "allocate memory")
-	}
-
-	b.HStore(ctx, ptr)
-	ctx.Memory().Write(ptr+b.HLen(), b.body)
-
-	return ptr, nil
-}
-
-func (b *ByteArray) Load(ctx *Context, ptr int32) {
-	b.TypeHeader.HLoad(ctx, ptr)
-	b.body = ctx.Memory().Read(ptr+b.HLen(), b.dataLen)
-}
-
-func (b *ByteArray) Set(value interface{}) error {
-	if value == nil {
-		value = []byte{}
-	}
-	data, ok := value.([]byte)
+func (t *ByteArray) Marshal(value interface{}) []byte {
+	input, ok := value.([]byte)
 	if !ok {
-		return errors.New("value is not []byte")
+		panic(fmt.Sprintf("expected a []byte, but the input was %d", reflect.TypeOf(value)))
 	}
-	b.dataLen = int32(len(data))
-	b.body = data
+	t.dataLen = int32(len(input))
 
-	return nil
+	data := make([]byte, t.dataLen+HeaderLen)
+	header := &TypeHeader{}
+	headerData := header.Marshal(t.dataType, t.dataLen)
+	copy(data[:], headerData)
+
+	copy(data[HeaderLen:], input)
+
+	return data
 }
 
-func (b *ByteArray) Get() interface{} {
-	return b.body
+// Unmarshal desialize the data to the type
+func (t *ByteArray) Unmarshal(data []byte) (interface{}, error) {
+	header := TypeHeader{}
+	_, dataLen, err := header.Unmarshal(data)
+	if err != nil {
+		return nil, err
+	}
+
+	return data[HeaderLen : HeaderLen+dataLen], nil
 }
 
-func (b *ByteArray) DataType() reflect.Type {
-	return reflect.TypeOf(b.body)
-}
-
+// String implements IType
 type String struct {
-	TypeHeader
-
-	body string
+	dataType TypeIndex
+	dataLen  int32
 }
 
 func NewString() *String {
-	return &String{
-		TypeHeader: TypeHeader{
-			dataType: int16(TypeString),
-		},
-	}
+	return &String{dataType: TypeString}
 }
 
-func (s *String) Store(ctx *Context) (int32, error) {
-	size := s.HLen() + s.dataLen
-	ptr, err := ctx.Memory().Allocate(size)
-	if err != nil {
-		return 0, errors.Wrap(err, "allocate memory")
-	}
-
-	s.HStore(ctx, ptr)
-	ctx.Memory().Write(ptr+s.HLen(), []byte(s.body))
-
-	return ptr, nil
-}
-
-func (s *String) Load(ctx *Context, ptr int32) {
-	s.TypeHeader.HLoad(ctx, ptr)
-	s.body = string(ctx.Memory().Read(ptr+s.HLen(), s.dataLen))
-}
-
-func (s *String) Set(value interface{}) error {
-	data, ok := value.(string)
+func (t *String) Marshal(value interface{}) []byte {
+	input, ok := value.(string)
 	if !ok {
-		return errors.New("value is not string")
+		panic(fmt.Sprintf("expected a string, but the input was %d", reflect.TypeOf(value)))
 	}
-	s.dataLen = int32(len(data))
-	s.body = data
-	return nil
+	t.dataLen = int32(len(input))
+
+	data := make([]byte, t.dataLen+HeaderLen)
+	header := &TypeHeader{}
+	headerData := header.Marshal(t.dataType, t.dataLen)
+	copy(data[:], headerData)
+
+	copy(data[HeaderLen:], []byte(input))
+
+	return data
 }
 
-func (s *String) Get() interface{} {
-	return s.body
-}
+// Unmarshal desialize the data to the type
+func (t *String) Unmarshal(data []byte) (interface{}, error) {
+	header := TypeHeader{}
+	_, dataLen, err := header.Unmarshal(data)
+	if err != nil {
+		return nil, err
+	}
 
-func (s *String) DataType() reflect.Type {
-	return reflect.TypeOf(s.body)
+	return string(data[HeaderLen : HeaderLen+dataLen]), nil
 }
 
 type Bool struct {
-	TypeHeader
-
-	body bool
+	dataType TypeIndex
+	dataLen  int32
 }
 
 func NewBool() *Bool {
-	return &Bool{
-		TypeHeader: TypeHeader{
-			dataType: int16(TypeBool),
-		},
-	}
+	return &Bool{dataType: TypeBool}
 }
 
-func (b *Bool) Store(ctx *Context) (int32, error) {
-	size := b.HLen() + b.dataLen
-	ptr, err := ctx.Memory().Allocate(size)
-	if err != nil {
-		return 0, errors.Wrap(err, "allocate memory")
-	}
-
-	b.HStore(ctx, ptr)
-	data := byte(0)
-	if b.body {
-		data = byte(1)
-	}
-	ctx.Memory().Write(ptr+b.HLen(), []byte{data})
-
-	return ptr, nil
-}
-
-func (b *Bool) Load(ctx *Context, ptr int32) {
-	b.TypeHeader.HLoad(ctx, ptr)
-	b.body = false
-	if ctx.Memory().Read(ptr+b.HLen(), b.dataLen)[0] == 1 {
-		b.body = true
-	}
-}
-
-func (b *Bool) Set(value interface{}) error {
-	data, ok := value.(bool)
+func (t *Bool) Marshal(value interface{}) []byte {
+	input, ok := value.(bool)
 	if !ok {
-		return errors.New("value is not bool")
+		panic(fmt.Sprintf("expected a bool, but the input was %d", reflect.TypeOf(value)))
 	}
-	b.dataLen = 1
-	b.body = data
-	return nil
+	t.dataLen = 1
+
+	data := make([]byte, t.dataLen+HeaderLen)
+	header := &TypeHeader{}
+	headerData := header.Marshal(t.dataType, t.dataLen)
+	copy(data[:], headerData)
+
+	body := byte(0)
+	if input {
+		body = byte(1)
+	}
+	data[HeaderLen] = body
+
+	return data
 }
 
-func (b *Bool) Get() interface{} {
-	return b.body
-}
+// Unmarshal desialize the data to the type
+func (t *Bool) Unmarshal(data []byte) (interface{}, error) {
+	header := TypeHeader{}
+	_, dataLen, err := header.Unmarshal(data)
+	if err != nil {
+		return nil, err
+	}
 
-func (b *Bool) DataType() reflect.Type {
-	return reflect.TypeOf(b.body)
+	return data[HeaderLen : HeaderLen+dataLen][0] == 1, nil
 }
 
 type Int32 struct {
-	TypeHeader
-
-	body int32
+	dataType TypeIndex
+	dataLen  int32
 }
 
 func NewInt32() *Int32 {
-	return &Int32{
-		TypeHeader: TypeHeader{
-			dataType: int16(TypeInt32),
-		},
-	}
+	return &Int32{dataType: TypeInt32}
 }
 
-func (i *Int32) Store(ctx *Context) (int32, error) {
-	size := i.HLen() + i.dataLen
-	ptr, err := ctx.Memory().Allocate(size)
-	if err != nil {
-		return 0, errors.Wrap(err, "allocate memory")
-	}
-
-	i.HStore(ctx, ptr)
-	data := int32ToBytes(i.body)
-	ctx.Memory().Write(ptr+i.HLen(), data)
-
-	return ptr, nil
-}
-
-func (i *Int32) Load(ctx *Context, ptr int32) {
-	i.TypeHeader.HLoad(ctx, ptr)
-	data := ctx.Memory().Read(ptr+i.HLen(), i.dataLen)
-	i.body = bytesToInt32(data)
-}
-
-func (i *Int32) Set(value interface{}) error {
-	data, ok := value.(int32)
+func (t *Int32) Marshal(value interface{}) []byte {
+	input, ok := value.(int32)
 	if !ok {
-		return errors.New("value is not int32")
+		panic(fmt.Sprintf("expected a int32, but the input was %d", reflect.TypeOf(value)))
 	}
-	i.dataLen = 4
-	i.body = data
-	return nil
+	t.dataLen = 4
+
+	data := make([]byte, t.dataLen+HeaderLen)
+	header := &TypeHeader{}
+	headerData := header.Marshal(t.dataType, t.dataLen)
+	copy(data[:], headerData)
+
+	body := int32ToBytes(input)
+	copy(data[HeaderLen:], body)
+
+	return data
 }
 
-func (i *Int32) Get() interface{} {
-	return i.body
-}
+// Unmarshal desialize the data to the type
+func (t *Int32) Unmarshal(data []byte) (interface{}, error) {
+	header := TypeHeader{}
+	_, dataLen, err := header.Unmarshal(data)
+	if err != nil {
+		return nil, err
+	}
 
-func (i *Int32) DataType() reflect.Type {
-	return reflect.TypeOf(i.body)
+	body := data[HeaderLen : HeaderLen+dataLen]
+	return bytesToInt32(body), nil
 }
 
 type Int64 struct {
-	TypeHeader
-
-	body int64
+	dataType TypeIndex
+	dataLen  int32
 }
 
 func NewInt64() *Int64 {
-	return &Int64{
-		TypeHeader: TypeHeader{
-			dataType: int16(TypeInt64),
-		},
-	}
+	return &Int64{dataType: TypeInt64}
 }
 
-func (i *Int64) Store(ctx *Context) (int32, error) {
-	size := i.HLen() + i.dataLen
-	ptr, err := ctx.Memory().Allocate(size)
-	if err != nil {
-		return 0, errors.Wrap(err, "allocate memory")
-	}
-
-	i.HStore(ctx, ptr)
-	data := int64ToBytes(i.body)
-	ctx.Memory().Write(ptr+i.HLen(), data)
-
-	return ptr, nil
-}
-
-func (i *Int64) Load(ctx *Context, ptr int32) {
-	i.TypeHeader.HLoad(ctx, ptr)
-	data := ctx.Memory().Read(ptr+i.HLen(), i.dataLen)
-	i.body = bytesToInt64(data)
-}
-
-func (i *Int64) Set(value interface{}) error {
-	data, ok := value.(int64)
+func (t *Int64) Marshal(value interface{}) []byte {
+	input, ok := value.(int64)
 	if !ok {
-		return errors.New("value is not int64")
+		panic(fmt.Sprintf("expected a int64, but the input was %d", reflect.TypeOf(value)))
 	}
-	i.dataLen = 8
-	i.body = data
-	return nil
+	t.dataLen = 8
+
+	data := make([]byte, t.dataLen+HeaderLen)
+	header := &TypeHeader{}
+	headerData := header.Marshal(t.dataType, t.dataLen)
+	copy(data[:], headerData)
+
+	body := int64ToBytes(input)
+	copy(data[HeaderLen:], body)
+
+	return data
 }
 
-func (i *Int64) Get() interface{} {
-	return i.body
-}
-
-func (i *Int64) DataType() reflect.Type {
-	return reflect.TypeOf(i.body)
-}
-
-type UInt64 struct {
-	TypeHeader
-
-	body uint64
-}
-
-func NewUInt64() *UInt64 {
-	return &UInt64{
-		TypeHeader: TypeHeader{
-			dataType: int16(TypeUint64),
-		},
-	}
-}
-
-func (i *UInt64) Store(ctx *Context) (int32, error) {
-	size := i.HLen() + i.dataLen
-	ptr, err := ctx.Memory().Allocate(size)
+// Unmarshal desialize the data to the type
+func (t *Int64) Unmarshal(data []byte) (interface{}, error) {
+	header := TypeHeader{}
+	_, dataLen, err := header.Unmarshal(data)
 	if err != nil {
-		return 0, errors.Wrap(err, "allocate memory")
+		return nil, err
 	}
 
-	i.HStore(ctx, ptr)
-	data := int64ToBytes(int64(i.body))
-	ctx.Memory().Write(ptr+i.HLen(), data)
-
-	return ptr, nil
+	body := data[HeaderLen : HeaderLen+dataLen]
+	return bytesToInt64(body), nil
 }
 
-func (i *UInt64) Load(ctx *Context, ptr int32) {
-	i.TypeHeader.HLoad(ctx, ptr)
-	data := ctx.Memory().Read(ptr+i.HLen(), i.dataLen)
-	i.body = uint64(bytesToInt64(data))
+type Uint64 struct {
+	dataType TypeIndex
+	dataLen  int32
 }
 
-func (i *UInt64) Set(value interface{}) error {
-	data, ok := value.(uint64)
+func NewUint64() *Uint64 {
+	return &Uint64{dataType: TypeUint64}
+}
+
+func (t *Uint64) Marshal(value interface{}) []byte {
+	input, ok := value.(uint64)
 	if !ok {
-		return errors.New("value is not uint64")
+		panic(fmt.Sprintf("expected a int64, but the input was %d", reflect.TypeOf(value)))
 	}
-	i.dataLen = 8
-	i.body = data
-	return nil
+	t.dataLen = 8
+
+	data := make([]byte, t.dataLen+HeaderLen)
+	header := &TypeHeader{}
+	headerData := header.Marshal(t.dataType, t.dataLen)
+	copy(data[:], headerData)
+
+	body := int64ToBytes(int64(input))
+	copy(data[HeaderLen:], body)
+
+	return data
 }
 
-func (i *UInt64) Get() interface{} {
-	return i.body
-}
+// Unmarshal desialize the data to the type
+func (t *Uint64) Unmarshal(data []byte) (interface{}, error) {
+	header := TypeHeader{}
+	_, dataLen, err := header.Unmarshal(data)
+	if err != nil {
+		return nil, err
+	}
 
-func (i *UInt64) DataType() reflect.Type {
-	return reflect.TypeOf(i.body)
+	body := data[HeaderLen : HeaderLen+dataLen]
+	return uint64(bytesToInt64(body)), nil
 }

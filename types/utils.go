@@ -1,4 +1,4 @@
-package runtimetypes
+package types
 
 func int32ToBytes(value int32) []byte {
 	var data [4]byte
