@@ -58,6 +58,13 @@ func NewEntryList(cap int) *EntryList {
 	}
 }
 
+func (list *EntryList) Len() int {
+	list.Lock()
+	defer list.Unlock()
+
+	return list.len
+}
+
 func (list *EntryList) PushFront(entry *Entry) {
 	list.Lock()
 	defer list.Unlock()
@@ -131,7 +138,7 @@ func NewRuntimePool(capacity int) *RuntimePool {
 }
 
 func (pool *RuntimePool) Len() int {
-	return pool.cache.len
+	return pool.cache.Len()
 }
 
 func (pool *RuntimePool) Runtime(rtType RuntimeType, code []byte, apis *HostAPIRegistry) (string, AspectRuntime, error) {
