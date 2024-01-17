@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"runtime"
+	"sync"
 	"testing"
 	"time"
 
@@ -70,33 +72,132 @@ func TestPoolPerformance(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
-	hostApis := NewHostAPIRegistry()
-	err := addApis(t, hostApis)
-	if err != nil {
-		return
-	}
-
 	// call without pool
 	t1 := time.Now()
 	for i := 0; i < 100; i++ {
+		hostApis := NewHostAPIRegistry()
+		err := addApis(t, hostApis)
+		if err != nil {
+			return
+		}
+
 		wasmTimeRuntime, err := NewAspectRuntime(WASM, raw, hostApis)
 		require.Equal(t, nil, err)
-		_ = wasmTimeRuntime
+		res, err := wasmTimeRuntime.Call("testIncrease")
+		require.Equal(t, nil, err)
+
+		require.Equal(t, "10", res.(string))
+		wasmTimeRuntime.Destroy()
+		wasmTimeRuntime = nil
 	}
-	t2 := time.Now()
-	cost1 := t2.Sub(t1).Microseconds()
+	cost1 := time.Now().Sub(t1).Microseconds()
 	fmt.Printf("total cost without pool: %dμs\n", cost1)
 
 	// call with pool
 	pool := NewRuntimePool(10)
-	t3 := time.Now()
+	t2 := time.Now()
 	for i := 0; i < 100; i++ {
+		hostApis := NewHostAPIRegistry()
+		err := addApis(t, hostApis)
+		if err != nil {
+			return
+		}
+
 		key, wasmTimeRuntime, err := pool.Runtime(WASM, raw, hostApis)
 		require.Equal(t, nil, err)
+		res, err := wasmTimeRuntime.Call("testIncrease")
+		require.Equal(t, nil, err)
+
+		require.Equal(t, "10", res.(string))
 		pool.Return(key, wasmTimeRuntime)
+
+		require.Equal(t, 1, pool.Len())
 	}
-	t4 := time.Now()
-	cost2 := t4.Sub(t3).Microseconds()
+	cost2 := time.Now().Sub(t2).Microseconds()
 	fmt.Printf("total cost with pool: %dμs\n", cost2)
-	fmt.Println("cost with pool / cost without pool: ", float32(cost2)/float32(cost1)) // it is 0.2606396 in one test
+	fmt.Printf("cost with pool / cost without pool: %.2f%%\n", float32(cost2)/float32(cost1)*100) // it is 0.2606396 in one test
+}
+
+func TestPoolParallelPerformance(t *testing.T) {
+	cwd, _ := os.Getwd()
+	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
+
+	times := 500
+	poolsize := 30
+	totalCost1 := 0
+	totalCost2 := 0
+
+	for n := 0; n < 1; n++ {
+		// call without pool
+		t1 := time.Now()
+		var wg1 sync.WaitGroup
+		for i := 1; i < times; i++ {
+			wg1.Add(1)
+
+			// if i%poolsize == 0 {
+			// 	time.Sleep(time.Duration(poolsize) * time.Millisecond)
+			// }
+			go func() {
+				hostApis := NewHostAPIRegistry()
+				err := addApis(t, hostApis)
+				if err != nil {
+					return
+				}
+
+				wasmTimeRuntime, err := NewAspectRuntime(WASM, raw, hostApis)
+				require.Equal(t, nil, err)
+				res, err := wasmTimeRuntime.Call("greet", "abc")
+				require.Equal(t, nil, err)
+
+				require.Equal(t, "hello-greet-abc-hello-greet", res.(string))
+				wasmTimeRuntime.Destroy()
+				wasmTimeRuntime = nil
+				wg1.Done()
+			}()
+
+		}
+		wg1.Wait()
+		// fmt.Println("total used: ", poolUsed)
+		cost1 := time.Now().Sub(t1).Milliseconds()
+		fmt.Printf("cost without pool: %dms\n", cost1)
+		time.Sleep(1 * time.Second)
+		totalCost1 += int(cost1)
+
+		// call with pool
+		pool := NewRuntimePool(poolsize)
+		t2 := time.Now()
+		var wg2 sync.WaitGroup
+		for i := 1; i < times; i++ {
+			wg2.Add(1)
+
+			// if i%poolsize == 0 {
+			// 	time.Sleep(time.Duration(poolsize) * time.Millisecond)
+			// }
+			go func() {
+				hostApis := NewHostAPIRegistry()
+				err := addApis(t, hostApis)
+				if err != nil {
+					return
+				}
+
+				key, wasmTimeRuntime, err := pool.Runtime(WASM, raw, hostApis)
+				require.Equal(t, nil, err)
+				res, err := wasmTimeRuntime.Call("greet", "abc")
+				require.Equal(t, nil, err)
+
+				require.Equal(t, "hello-greet-abc-hello-greet", res.(string))
+				pool.Return(key, wasmTimeRuntime)
+
+				// require.Equal(t, 1, pool.Len())
+				wg2.Done()
+			}()
+		}
+		wg2.Wait()
+		// fmt.Println("total used: ", poolUsed)
+		cost2 := time.Now().Sub(t2).Milliseconds()
+		fmt.Printf("total cost with pool: %dms\n", cost2)
+		totalCost2 += int(cost2)
+		runtime.GC()
+	}
+	fmt.Printf("cost with pool / cost without pool: %.2f%%\n", float32(totalCost2)/float32(totalCost1)*100) // it is 0.2606396 in one test
 }
