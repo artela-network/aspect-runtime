@@ -1,9 +1,11 @@
 package runtime
 
 import (
+	"context"
 	"fmt"
 	"runtime/debug"
 	"sync"
+	"time"
 
 	"github.com/bytecodealliance/wasmtime-go/v14"
 	"github.com/ethereum/go-ethereum/log"
@@ -34,6 +36,7 @@ type wasmTimeRuntime struct {
 func NewWASMTimeRuntime(code []byte, apis *HostAPIRegistry) (out AspectRuntime, err error) {
 	watvm := &wasmTimeRuntime{engine: wasmtime.NewEngineWithConfig(defaultWASMTimeConfig())}
 	watvm.store = wasmtime.NewStore(watvm.engine)
+	watvm.store.SetEpochDeadline(1)
 	// limit memory size to 32MB for now
 	watvm.store.Limiter(MaxMemorySize, -1, -1, -1, 100)
 
@@ -76,6 +79,27 @@ func NewWASMTimeRuntime(code []byte, apis *HostAPIRegistry) (out AspectRuntime, 
 
 // Call wasm
 func (w *wasmTimeRuntime) Call(method string, args ...interface{}) (interface{}, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*800))
+	defer cancel()
+
+	retChan := make(chan interface{}, 1)
+	errChan := make(chan error, 1)
+	go func(ctx context.Context) {
+		ret, err := w.call(method, args...)
+		retChan <- ret
+		errChan <- err
+	}(ctx)
+
+	select {
+	case <-ctx.Done():
+		return <-retChan, <-errChan
+	case <-time.After(time.Duration(time.Millisecond * 800)):
+		w.engine.IncrementEpoch()
+		return nil, errors.New("call wasm timeout")
+	}
+}
+
+func (w *wasmTimeRuntime) call(method string, args ...interface{}) (interface{}, error) {
 	w.Lock()
 	defer w.Unlock()
 
@@ -158,6 +182,7 @@ func (w *wasmTimeRuntime) ResetStore(apis *HostAPIRegistry) (err error) {
 	defer w.Unlock()
 
 	w.store = wasmtime.NewStore(w.engine)
+	w.store.SetEpochDeadline(1)
 	w.store.Limiter(MaxMemorySize, -1, -1, -1, 100)
 	// w.instance.GetExport(w.store, "memory").Memory().Grow(w.store, 10)
 
@@ -244,6 +269,7 @@ func defaultWASMTimeConfig() *wasmtime.Config {
 	config.SetCraneliftOptLevel(wasmtime.OptLevelSpeedAndSize)
 	// disable multi-memory by default
 	config.SetWasmMultiMemory(false)
+	config.SetEpochInterruption(true)
 
 	return config
 }
