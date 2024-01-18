@@ -17,7 +17,7 @@ const (
 	ExpNameMemory = "memory"
 	MaxMemorySize = 32 * 1024 * 1024
 
-	StoreFuel          = 100000
+	StoreFuel          = 3579139937
 	HostApiConsumeFuel = 1000
 )
 
