@@ -16,6 +16,9 @@ import (
 const (
 	ExpNameMemory = "memory"
 	MaxMemorySize = 32 * 1024 * 1024
+
+	StoreFuel          = 100000
+	HostApiConsumeFuel = 1000
 )
 
 // wasmTimeRuntime is a wrapper for WASMTime runtime
@@ -34,6 +37,10 @@ type wasmTimeRuntime struct {
 func NewWASMTimeRuntime(code []byte, apis *HostAPIRegistry) (out AspectRuntime, err error) {
 	watvm := &wasmTimeRuntime{engine: wasmtime.NewEngineWithConfig(defaultWASMTimeConfig())}
 	watvm.store = wasmtime.NewStore(watvm.engine)
+	err = watvm.store.AddFuel(StoreFuel)
+	if err != nil {
+		return nil, err
+	}
 	// limit memory size to 32MB for now
 	watvm.store.Limiter(MaxMemorySize, -1, -1, -1, 100)
 
@@ -158,6 +165,10 @@ func (w *wasmTimeRuntime) ResetStore(apis *HostAPIRegistry) (err error) {
 	defer w.Unlock()
 
 	w.store = wasmtime.NewStore(w.engine)
+	err = w.store.AddFuel(StoreFuel)
+	if err != nil {
+		return err
+	}
 	w.store.Limiter(MaxMemorySize, -1, -1, -1, 100)
 	// w.instance.GetExport(w.store, "memory").Memory().Grow(w.store, 10)
 
@@ -244,6 +255,7 @@ func defaultWASMTimeConfig() *wasmtime.Config {
 	config.SetCraneliftOptLevel(wasmtime.OptLevelSpeedAndSize)
 	// disable multi-memory by default
 	config.SetWasmMultiMemory(false)
+	config.SetConsumeFuel(true)
 
 	return config
 }

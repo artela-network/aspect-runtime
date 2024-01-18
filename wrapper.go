@@ -83,6 +83,7 @@ func Wrappers(ctx *types.Context, fn interface{}) (interface{}, error) {
 }
 
 func executeWrapper(ctx *types.Context, fn interface{}, ptrs ...int32) {
+	ctx.Store.ConsumeFuel(HostApiConsumeFuel)
 	args, err := paramsRead(ctx, ptrs...)
 	if err != nil {
 		log.Panicln("read params:", err)
@@ -92,6 +93,7 @@ func executeWrapper(ctx *types.Context, fn interface{}, ptrs ...int32) {
 }
 
 func executeWrapperAndReturn2(ctx *types.Context, fn interface{}, ptrs ...int32) ([]int32, *wasmtime.Trap) {
+	ctx.Store.ConsumeFuel(HostApiConsumeFuel)
 	args, err := paramsRead(ctx, ptrs...)
 	if err != nil {
 		log.Panicln("read params:", err)
@@ -106,6 +108,7 @@ func executeWrapperAndReturn2(ctx *types.Context, fn interface{}, ptrs ...int32)
 }
 
 func executeWrapperAndReturn(ctx *types.Context, fn interface{}, ptrs ...int32) int32 {
+	ctx.Store.ConsumeFuel(HostApiConsumeFuel)
 	args, err := paramsRead(ctx, ptrs...)
 	if err != nil {
 		log.Println("read params:", err)
