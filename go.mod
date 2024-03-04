@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/bytecodealliance/wasmtime-go/v14 v14.0.0
 	github.com/ethereum/go-ethereum v1.12.0
+	github.com/google/uuid v1.3.0
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.2
 )

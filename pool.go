@@ -1,11 +1,13 @@
 package runtime
 
 import (
+	"context"
 	"crypto"
 	"crypto/sha1"
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/artela-network/aspect-runtime/types"
 	"reflect"
 	"strings"
 	"sync"
@@ -26,7 +28,7 @@ type Entry struct {
 	snext *Entry // for sub list
 
 	key     Key // build with id:hash
-	runtime AspectRuntime
+	runtime types.AspectRuntime
 }
 
 type EntryList struct {
@@ -128,12 +130,16 @@ func (list *EntryList) PopFront(hash Hash) (*Entry, bool) {
 type RuntimePool struct {
 	sync.Mutex
 
-	cache *EntryList
+	cache  *EntryList
+	logger types.Logger
+	ctx    context.Context
 }
 
-func NewRuntimePool(capacity int) *RuntimePool {
+func NewRuntimePool(ctx context.Context, logger types.Logger, capacity int) *RuntimePool {
 	return &RuntimePool{
-		cache: NewEntryList(capacity),
+		cache:  NewEntryList(capacity),
+		logger: logger,
+		ctx:    ctx,
 	}
 }
 
@@ -141,14 +147,14 @@ func (pool *RuntimePool) Len() int {
 	return pool.cache.Len()
 }
 
-func (pool *RuntimePool) Runtime(rtType RuntimeType, code []byte, apis *HostAPIRegistry) (string, AspectRuntime, error) {
+func (pool *RuntimePool) Runtime(rtType RuntimeType, code []byte, apis *types.HostAPIRegistry) (string, types.AspectRuntime, error) {
 	hash := hashOfRuntimeArgs(rtType, code)
 	key, rt, err := pool.get(hash)
 	if err == nil && rt.ResetStore(apis) == nil {
 		return string(key), rt, nil
 	}
 
-	rt, err = NewAspectRuntime(rtType, code, apis)
+	rt, err = NewAspectRuntime(pool.ctx, pool.logger, rtType, code, apis)
 
 	if err != nil {
 		return "", nil, err
@@ -158,7 +164,7 @@ func (pool *RuntimePool) Runtime(rtType RuntimeType, code []byte, apis *HostAPIR
 	return join(id.String(), hash), rt, nil
 }
 
-func (pool *RuntimePool) get(hash Hash) (Key, AspectRuntime, error) {
+func (pool *RuntimePool) get(hash Hash) (Key, types.AspectRuntime, error) {
 	entry, ok := pool.cache.PopFront(hash)
 	if !ok {
 		return "", nil, errors.New("not found")
@@ -167,7 +173,7 @@ func (pool *RuntimePool) get(hash Hash) (Key, AspectRuntime, error) {
 }
 
 // Return returns a runtime to the pool
-func (pool *RuntimePool) Return(key string, runtime AspectRuntime) {
+func (pool *RuntimePool) Return(key string, runtime types.AspectRuntime) {
 	// free the hostapis and ctx injected to types, in case that go runtime GC failed
 	runtime.Destroy()
 

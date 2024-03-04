@@ -1,7 +1,12 @@
 package runtime
 
 import (
+	"context"
 	"fmt"
+	"github.com/artela-network/aspect-runtime/types"
+	"github.com/artela-network/aspect-runtime/wasmtime"
+	"github.com/ethereum/go-ethereum/common/math"
+	"github.com/ethereum/go-ethereum/log"
 	"os"
 	"path"
 	"runtime"
@@ -18,18 +23,18 @@ func TestCallNormalWithPool(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
-	hostApis := NewHostAPIRegistry()
+	hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
 	err := addApis(t, hostApis)
 	if err != nil {
 		return
 	}
 
-	pool := NewRuntimePool(10)
+	pool := NewRuntimePool(context.Background(), log.New(), 10)
 
 	for i := 0; i < 12; i++ {
 		key, wasmTimeRuntime, err := pool.Runtime(WASM, raw, hostApis)
 		require.Equal(t, nil, err)
-		res, err := wasmTimeRuntime.Call("testIncrease")
+		res, _, err := wasmTimeRuntime.Call("testIncrease", math.MaxInt64)
 		require.Equal(t, nil, err)
 
 		// global: let sum = 0;
@@ -46,10 +51,10 @@ func TestCallNormalWithPool2(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
-	pool := NewRuntimePool(10)
+	pool := NewRuntimePool(context.Background(), log.New(), 10)
 
 	for i := 0; i < 12; i++ {
-		hostApis := NewHostAPIRegistry()
+		hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
 		// nolint
 		err := addApis(t, hostApis)
 		if err != nil {
@@ -58,7 +63,7 @@ func TestCallNormalWithPool2(t *testing.T) {
 
 		key, wasmTimeRuntime, err := pool.Runtime(WASM, raw, hostApis)
 		require.Equal(t, nil, err)
-		res, err := wasmTimeRuntime.Call("testIncrease")
+		res, _, err := wasmTimeRuntime.Call("testIncrease", math.MaxInt64)
 		require.Equal(t, nil, err)
 
 		require.Equal(t, "10", res.(string))
@@ -71,19 +76,18 @@ func TestCallNormalWithPool2(t *testing.T) {
 func TestPoolPerformance(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
-
 	// call without pool
 	t1 := time.Now()
 	for i := 0; i < 100; i++ {
-		hostApis := NewHostAPIRegistry()
+		hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
 		err := addApis(t, hostApis)
 		if err != nil {
 			return
 		}
 
-		wasmTimeRuntime, err := NewAspectRuntime(WASM, raw, hostApis)
+		wasmTimeRuntime, err := NewAspectRuntime(context.Background(), log.New(), WASM, raw, hostApis)
 		require.Equal(t, nil, err)
-		res, err := wasmTimeRuntime.Call("testIncrease")
+		res, _, err := wasmTimeRuntime.Call("testIncrease", math.MaxInt64)
 		require.Equal(t, nil, err)
 
 		require.Equal(t, "10", res.(string))
@@ -94,10 +98,10 @@ func TestPoolPerformance(t *testing.T) {
 	fmt.Printf("total cost without pool: %dμs\n", cost1)
 
 	// call with pool
-	pool := NewRuntimePool(10)
+	pool := NewRuntimePool(context.Background(), log.New(), 10)
 	t2 := time.Now()
 	for i := 0; i < 100; i++ {
-		hostApis := NewHostAPIRegistry()
+		hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
 		err := addApis(t, hostApis)
 		if err != nil {
 			return
@@ -105,7 +109,8 @@ func TestPoolPerformance(t *testing.T) {
 
 		key, wasmTimeRuntime, err := pool.Runtime(WASM, raw, hostApis)
 		require.Equal(t, nil, err)
-		res, err := wasmTimeRuntime.Call("testIncrease")
+
+		res, _, err := wasmTimeRuntime.Call("testIncrease", math.MaxInt64)
 		require.Equal(t, nil, err)
 
 		require.Equal(t, "10", res.(string))
@@ -138,15 +143,15 @@ func TestPoolParallelPerformance(t *testing.T) {
 			// 	time.Sleep(time.Duration(poolsize) * time.Millisecond)
 			// }
 			go func() {
-				hostApis := NewHostAPIRegistry()
+				hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
 				err := addApis(t, hostApis)
 				if err != nil {
 					return
 				}
 
-				wasmTimeRuntime, err := NewAspectRuntime(WASM, raw, hostApis)
+				wasmTimeRuntime, err := NewAspectRuntime(context.Background(), log.New(), WASM, raw, hostApis)
 				require.Equal(t, nil, err)
-				res, err := wasmTimeRuntime.Call("greet", "abc")
+				res, _, err := wasmTimeRuntime.Call("greet", math.MaxInt64, "abc")
 				require.Equal(t, nil, err)
 
 				require.Equal(t, "hello-greet-abc-hello-greet", res.(string))
@@ -164,7 +169,7 @@ func TestPoolParallelPerformance(t *testing.T) {
 		totalCost1 += int(cost1)
 
 		// call with pool
-		pool := NewRuntimePool(poolsize)
+		pool := NewRuntimePool(context.Background(), log.New(), poolsize)
 		t2 := time.Now()
 		var wg2 sync.WaitGroup
 		for i := 1; i < times; i++ {
@@ -174,7 +179,7 @@ func TestPoolParallelPerformance(t *testing.T) {
 			// 	time.Sleep(time.Duration(poolsize) * time.Millisecond)
 			// }
 			go func() {
-				hostApis := NewHostAPIRegistry()
+				hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
 				err := addApis(t, hostApis)
 				if err != nil {
 					return
@@ -182,7 +187,7 @@ func TestPoolParallelPerformance(t *testing.T) {
 
 				key, wasmTimeRuntime, err := pool.Runtime(WASM, raw, hostApis)
 				require.Equal(t, nil, err)
-				res, err := wasmTimeRuntime.Call("greet", "abc")
+				res, _, err := wasmTimeRuntime.Call("greet", math.MaxInt64, "abc")
 				require.Equal(t, nil, err)
 
 				require.Equal(t, "hello-greet-abc-hello-greet", res.(string))

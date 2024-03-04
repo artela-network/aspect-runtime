@@ -201,6 +201,27 @@ export function testIncrease(): i32 {
     return retAs.store();
 }
 
+export function infiniteLoop(): void {
+    while (true) {
+        // do nothing
+    }
+}
+
+export function fib(i: i32, n: i32): void {
+    // use loop to avoid stack overflow
+    for (let j: i32 = 0; j < i; j++) {
+        let a: i32 = 0;
+        let b: i32 = 1;
+        let c: i32 = 0;
+        while (n > 0) {
+            c = a + b;
+            a = b;
+            b = c;
+            n--;
+        }
+    }
+}
+
 export function allocate(size: i32): i32 {
     return heap.alloc(size) as i32;
 }

@@ -1,9 +1,15 @@
 package runtime
 
-import "github.com/pkg/errors"
+import (
+	"context"
+	"github.com/artela-network/aspect-runtime/types"
+	"github.com/artela-network/aspect-runtime/wasmtime"
+	"github.com/pkg/errors"
+)
 
 type (
-	engine func(code []byte, apis *HostAPIRegistry) (out AspectRuntime, err error)
+	engine func(ctx context.Context, logger types.Logger, code []byte, apis *types.HostAPIRegistry) (out types.AspectRuntime, err error)
+
 	// nolint
 	RuntimeType int
 )
@@ -13,24 +19,17 @@ const (
 )
 
 var enginePool = map[RuntimeType]engine{
-	WASM: NewWASMTimeRuntime,
-	// only support wasm now
-}
-
-type AspectRuntime interface {
-	Call(method string, args ...interface{}) (interface{}, error)
-	Destroy()
-	ResetStore(apis *HostAPIRegistry) error
+	WASM: wasmtime.NewWASMTimeRuntime,
 }
 
 // NewAspectRuntime is the factory method for creating aspect runtime
-func NewAspectRuntime(runtimeType RuntimeType, code []byte, apis *HostAPIRegistry) (AspectRuntime, error) {
+func NewAspectRuntime(ctx context.Context, logger types.Logger, runtimeType RuntimeType, code []byte, apis *types.HostAPIRegistry) (types.AspectRuntime, error) {
 	engine := enginePool[runtimeType]
 	if engine == nil {
 		return nil, errors.New("runtime engine not support")
 	}
 
-	aspectRuntime, err := engine(code, apis)
+	aspectRuntime, err := engine(ctx, logger, code, apis)
 	if err != nil {
 		return nil, err
 	}
