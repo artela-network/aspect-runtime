@@ -19,29 +19,41 @@ import (
 
 // Helper: init hostAPI collection(@see type script impl :: declare)
 func addApis(t *testing.T, hostApis *types.HostAPIRegistry) error {
-	err := hostApis.AddAPI("runtime_test", "test", "hello", func(arg string) (string, error) {
-		return "hello-" + arg + "-hello", nil
-	}, types.NewStaticGasRule(1))
+	err := hostApis.AddAPI("runtime_test", "test", "hello", &types.HostFuncWithGasRule{
+		Func: func(arg string) (string, error) {
+			return "hello-" + arg + "-hello", nil
+		},
+		GasRule: types.NewStaticGasRule(1),
+	})
 	if err != nil {
 		return err
 	}
-	err = hostApis.AddAPI("runtime_test", "test", "hello2", func(arg1 string, arg2 string, arg3 string) (string, error) {
-		tmp := arg2 + arg3
-		return arg1 + "-" + tmp, nil
-	}, types.NewStaticGasRule(1))
+	err = hostApis.AddAPI("runtime_test", "test", "hello2", &types.HostFuncWithGasRule{
+		Func: func(arg1 string, arg2 string, arg3 string) (string, error) {
+			tmp := arg2 + arg3
+			return arg1 + "-" + tmp, nil
+		},
+		GasRule: types.NewStaticGasRule(1),
+	})
 	if err != nil {
 		return err
 	}
-	err = hostApis.AddAPI("runtime_test", "test", "hello3", func(arg string) error {
-		require.Equal(t, "greet3-hello", arg)
-		return nil
-	}, types.NewStaticGasRule(1))
+	err = hostApis.AddAPI("runtime_test", "test", "hello3", &types.HostFuncWithGasRule{
+		Func: func(arg string) error {
+			require.Equal(t, "greet3-hello", arg)
+			return nil
+		},
+		GasRule: types.NewStaticGasRule(1),
+	})
 	if err != nil {
 		return err
 	}
-	err = hostApis.AddAPI("runtime_test", "test", "hello4", func(arg string) (string, error) {
-		return "", errors.New("error")
-	}, types.NewStaticGasRule(1))
+	err = hostApis.AddAPI("runtime_test", "test", "hello4", &types.HostFuncWithGasRule{
+		Func: func(arg string) (string, error) {
+			return "", errors.New("error")
+		},
+		GasRule: types.NewStaticGasRule(1),
+	})
 	if err != nil {
 		return err
 	}
@@ -50,9 +62,12 @@ func addApis(t *testing.T, hostApis *types.HostAPIRegistry) error {
 
 func TestAddApi(t *testing.T) {
 	hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
-	err := hostApis.AddAPI("index", "test", "hello4", func(arg string) (string, error) {
-		return "", errors.New("error")
-	}, types.NewStaticGasRule(1))
+	err := hostApis.AddAPI("index", "test", "hello4", &types.HostFuncWithGasRule{
+		Func: func(arg string) (string, error) {
+			return "", errors.New("error")
+		},
+		GasRule: types.NewStaticGasRule(1),
+	})
 	if err != nil {
 		return
 	}

@@ -11,8 +11,12 @@ import (
 	types "github.com/artela-network/aspect-runtime/types"
 )
 
-func Wrap(apiRegistry *types.HostAPIRegistry, fn interface{}, gasRule types.HostFuncGasRule) (interface{}, error) {
+func Wrap(apiRegistry *types.HostAPIRegistry, hostFunc *types.HostFuncWithGasRule) (interface{}, error) {
 	errNotSupport := errors.New("host function not supported")
+
+	fn := hostFunc.Func
+	gasRule := hostFunc.GasRule
+
 	t := reflect.TypeOf(fn)
 	if t.NumOut() > 2 || t.NumOut() == 0 {
 		return nil, errNotSupport

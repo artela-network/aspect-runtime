@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"context"
+	"github.com/artela-network/aspect-runtime/instrument"
 	"github.com/artela-network/aspect-runtime/types"
 	"github.com/artela-network/aspect-runtime/wasmtime"
 	"github.com/pkg/errors"
@@ -29,7 +30,12 @@ func NewAspectRuntime(ctx context.Context, logger types.Logger, runtimeType Runt
 		return nil, errors.New("runtime engine not support")
 	}
 
-	aspectRuntime, err := engine(ctx, logger, code, apis)
+	injectedCode, err := instrument.WasmInstrument(code)
+	if err != nil {
+		return nil, err
+	}
+
+	aspectRuntime, err := engine(ctx, logger, injectedCode, apis)
 	if err != nil {
 		return nil, err
 	}

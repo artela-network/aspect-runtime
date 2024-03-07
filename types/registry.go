@@ -6,7 +6,7 @@ type (
 	MethodName string
 )
 
-type HostFuncWrapper func(apiRegistry *HostAPIRegistry, fn interface{}, gasRule HostFuncGasRule) (interface{}, error)
+type HostFuncWrapper func(apiRegistry *HostAPIRegistry, hostFunc *HostFuncWithGasRule) (interface{}, error)
 
 type HostFuncWithGasRule struct {
 	Func    interface{}
@@ -34,8 +34,8 @@ func (h *HostAPIRegistry) Context() Context {
 	return h.ctx
 }
 
-func (h *HostAPIRegistry) AddAPI(module Module, ns NameSpace, method MethodName, fn interface{}, gasRule HostFuncGasRule) error {
-	wrapper, err := h.hostFuncWrapper(h, fn, gasRule)
+func (h *HostAPIRegistry) AddAPI(module Module, ns NameSpace, method MethodName, hostFunc *HostFuncWithGasRule) error {
+	wrapper, err := h.hostFuncWrapper(h, hostFunc)
 	if err != nil {
 		return err
 	}
