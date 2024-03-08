@@ -109,7 +109,12 @@ func (c *Context) RemainingGas() (int64, error) {
 		return 0, err
 	}
 
-	return gasCounter.Get(c.Store).I64() / types.EVMGasToWASMGasMultiplier, nil
+	leftover := gasCounter.Get(c.Store).I64()
+	if leftover < 0 {
+		return 0, types.OutOfGasError
+	}
+
+	return leftover / types.EVMGasToWASMGasMultiplier, nil
 }
 
 func (c *Context) ConsumeGas(gas int64) error {
