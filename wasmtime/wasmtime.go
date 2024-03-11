@@ -82,6 +82,14 @@ func NewWASMTimeRuntime(ctx context.Context, logger types.Logger, code []byte, a
 	return watvm, err
 }
 
+func (w *wasmTimeRuntime) Context() context.Context {
+	return w.ctx
+}
+
+func (w *wasmTimeRuntime) Logger() types.Logger {
+	return w.logger
+}
+
 // Call wasm
 func (w *wasmTimeRuntime) Call(method string, gas int64, args ...interface{}) (interface{}, int64, error) {
 	w.Lock()
