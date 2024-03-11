@@ -16,6 +16,7 @@ func Wrap(apiRegistry *types.HostAPIRegistry, hostFunc *types.HostFuncWithGasRul
 
 	fn := hostFunc.Func
 	gasRule := hostFunc.GasRule
+	hostCtx := hostFunc.HostContext
 
 	t := reflect.TypeOf(fn)
 	if t.NumOut() > 2 || t.NumOut() == 0 {
@@ -26,25 +27,25 @@ func Wrap(apiRegistry *types.HostAPIRegistry, hostFunc *types.HostFuncWithGasRul
 		switch t.NumIn() {
 		case 0:
 			return func() *wasmtime.Trap {
-				_, trap := executeWrapper(apiRegistry.Context(), gasRule, fn)
+				_, trap := executeWrapper(apiRegistry.Context(), hostCtx, gasRule, fn)
 				return trap
 			}, nil
 
 		case 1:
 			return func(arg int32) *wasmtime.Trap {
-				_, trap := executeWrapper(apiRegistry.Context(), gasRule, fn, arg)
+				_, trap := executeWrapper(apiRegistry.Context(), hostCtx, gasRule, fn, arg)
 				return trap
 			}, nil
 
 		case 2:
 			return func(arg1 int32, arg2 int32) *wasmtime.Trap {
-				_, trap := executeWrapper(apiRegistry.Context(), gasRule, fn, arg1, arg2)
+				_, trap := executeWrapper(apiRegistry.Context(), hostCtx, gasRule, fn, arg1, arg2)
 				return trap
 			}, nil
 
 		case 3:
 			return func(arg1 int32, arg2 int32, arg3 int32) *wasmtime.Trap {
-				_, trap := executeWrapper(apiRegistry.Context(), gasRule, fn, arg1, arg2, arg3)
+				_, trap := executeWrapper(apiRegistry.Context(), hostCtx, gasRule, fn, arg1, arg2, arg3)
 				return trap
 			}, nil
 		}
@@ -52,7 +53,7 @@ func Wrap(apiRegistry *types.HostAPIRegistry, hostFunc *types.HostFuncWithGasRul
 		switch t.NumIn() {
 		case 0:
 			return func() (int32, *wasmtime.Trap) {
-				out, trap := executeWrapper(apiRegistry.Context(), gasRule, fn)
+				out, trap := executeWrapper(apiRegistry.Context(), hostCtx, gasRule, fn)
 				if trap != nil {
 					return 0, trap
 				}
@@ -61,7 +62,7 @@ func Wrap(apiRegistry *types.HostAPIRegistry, hostFunc *types.HostFuncWithGasRul
 
 		case 1:
 			return func(arg int32) (int32, *wasmtime.Trap) {
-				out, trap := executeWrapper(apiRegistry.Context(), gasRule, fn, arg)
+				out, trap := executeWrapper(apiRegistry.Context(), hostCtx, gasRule, fn, arg)
 				if trap != nil {
 					return 0, trap
 				}
@@ -70,7 +71,7 @@ func Wrap(apiRegistry *types.HostAPIRegistry, hostFunc *types.HostFuncWithGasRul
 
 		case 2:
 			return func(arg1 int32, arg2 int32) (int32, *wasmtime.Trap) {
-				out, trap := executeWrapper(apiRegistry.Context(), gasRule, fn, arg1, arg2)
+				out, trap := executeWrapper(apiRegistry.Context(), hostCtx, gasRule, fn, arg1, arg2)
 				if trap != nil {
 					return 0, trap
 				}
@@ -79,7 +80,7 @@ func Wrap(apiRegistry *types.HostAPIRegistry, hostFunc *types.HostFuncWithGasRul
 
 		case 3:
 			return func(arg1 int32, arg2 int32, arg3 int32) (int32, *wasmtime.Trap) {
-				out, trap := executeWrapper(apiRegistry.Context(), gasRule, fn, arg1, arg2, arg3)
+				out, trap := executeWrapper(apiRegistry.Context(), hostCtx, gasRule, fn, arg1, arg2, arg3)
 				if trap != nil {
 					return 0, trap
 				}
@@ -91,28 +92,52 @@ func Wrap(apiRegistry *types.HostAPIRegistry, hostFunc *types.HostFuncWithGasRul
 	return nil, errNotSupport
 }
 
-func executeWrapper(ctx types.Context, gasRule types.HostFuncGasRule, fn interface{}, ptrs ...int32) ([]int32, *wasmtime.Trap) {
-	gasRule.SetContext(ctx)
+func executeWrapper(vmCtx types.VMContext, hostCtx types.HostContext, gasRule types.HostFuncGasRule, fn interface{}, ptrs ...int32) ([]int32, *wasmtime.Trap) {
+	gasRule.SetContext(vmCtx)
 
-	args, paramSize, err := paramsRead(ctx, ptrs...)
+	args, paramSize, err := paramsRead(vmCtx, ptrs...)
 	if paramSize > 0 {
 		if err := gasRule.ConsumeGas(paramSize); err != nil {
-			return nil, wasmtime.NewTrap(fmt.Sprintf("consume gas failed, %v", err))
+			return nil, wasmtime.NewTrap(err.Error())
 		}
 	}
 	if err != nil {
 		return nil, wasmtime.NewTrap(fmt.Sprintf("read params failed"))
 	}
 	v := reflect.ValueOf(fn)
+
+	// need to sync the gas in vm to host
+	remaining, err := vmCtx.RemainingWASMGas()
+	if err != nil {
+		return nil, wasmtime.NewTrap(fmt.Sprintf("read gas failed, %v", err))
+	}
+
+	// NOTE: during the host call, the gas consumed is in EVM metric, so it will be 1000x than WASM metric,
+	//       e.g. if the gas in WASM remaining is 11111, when put to EVM is will be 10,
+	//       after the host call, the gas put back to WASM should be (10 - EVM Gas Cost) * 1000 + 1111
+	remainderGas := remaining % types.EVMGasToWASMGasMultiplier
+	hostCtx.SetGas(uint64(remaining) / types.EVMGasToWASMGasMultiplier)
+
 	res := v.Call(args)
-	outPtrs, err := paramListWrite(ctx, res)
+
+	// after the host call we need to sync the gas in host back to vm
+	remaining = int64(hostCtx.RemainingGas())
+	if err := vmCtx.SetWASMGas(remaining*types.EVMGasToWASMGasMultiplier + remainderGas); err != nil {
+		return nil, nil
+	}
+
+	outPtrs, err := paramListWrite(vmCtx, res)
+	if err != nil && err.Error() == types.OutOfGasError.Error() {
+		return nil, wasmtime.NewTrap(types.OutOfGasError.Error())
+	}
+
 	if err != nil {
 		return nil, wasmtime.NewTrap(fmt.Sprintf("write params failed, %v", err))
 	}
 	return outPtrs, nil
 }
 
-func paramsRead(ctx types.Context, ptrs ...int32) ([]reflect.Value, int64, error) {
+func paramsRead(ctx types.VMContext, ptrs ...int32) ([]reflect.Value, int64, error) {
 	args := make([]reflect.Value, len(ptrs))
 	paramSize := int64(0)
 
@@ -154,7 +179,7 @@ func paramsRead(ctx types.Context, ptrs ...int32) ([]reflect.Value, int64, error
 	return args, paramSize, nil
 }
 
-func storeValue(ctx types.Context, value reflect.Value) (int32, error) {
+func storeValue(ctx types.VMContext, value reflect.Value) (int32, error) {
 	retIndex := types.AssertType(value.Interface())
 
 	resType, err := types.TypeObjectMapping(retIndex)
@@ -175,7 +200,7 @@ func storeValue(ctx types.Context, value reflect.Value) (int32, error) {
 	return ptr, nil
 }
 
-func paramListWrite(ctx types.Context, values []reflect.Value) ([]int32, error) {
+func paramListWrite(ctx types.VMContext, values []reflect.Value) ([]int32, error) {
 	if len(values) == 0 {
 		return nil, nil
 	}

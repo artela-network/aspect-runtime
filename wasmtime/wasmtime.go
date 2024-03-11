@@ -96,7 +96,7 @@ func (w *wasmTimeRuntime) Call(method string, gas int64, args ...interface{}) (i
 	w.logger.Debug("executing aspect")
 	val, callErr := w.call(method, args...)
 
-	leftover, gasErr := w.ctx.RemainingGas()
+	leftover, gasErr := w.ctx.RemainingEVMGas()
 	if gasErr != nil {
 		w.logger.Error("failed to get remaining gas", "err", gasErr)
 		return nil, 0, gasErr
@@ -183,6 +183,10 @@ func (w *wasmTimeRuntime) call(method string, args ...interface{}) (interface{},
 
 	val, err := run.Call(w.ctx.Store, ptrs...)
 	if err != nil {
+		if err.Error() == types.OutOfGasError.Error() {
+			return nil, types.OutOfGasError
+		}
+
 		return nil, errors.Wrapf(err, "method %s execution fail", method)
 	}
 
@@ -191,7 +195,7 @@ func (w *wasmTimeRuntime) call(method string, args ...interface{}) (interface{},
 
 func (w *wasmTimeRuntime) init(gas int64) error {
 	w.logger.Debug("filling up gas", "gas", gas)
-	if err := w.ctx.AddGas(gas); err != nil {
+	if err := w.ctx.AddEVMGas(gas); err != nil {
 		w.logger.Error("failed to add gas", "err", err)
 		return err
 	}

@@ -1,15 +1,15 @@
 package types
 
 type HostFuncGasRule interface {
-	SetContext(ctx Context)
+	SetContext(ctx VMContext)
 	ConsumeGas(dataSize int64) error
 }
 
 type BaseGasRule struct {
-	ctx Context
+	ctx VMContext
 }
 
-func (r *BaseGasRule) SetContext(ctx Context) {
+func (r *BaseGasRule) SetContext(ctx VMContext) {
 	r.ctx = ctx
 }
 
@@ -20,7 +20,7 @@ type StaticGasRule struct {
 }
 
 func (s *StaticGasRule) ConsumeGas(_ int64) error {
-	return s.ctx.ConsumeGas(s.cost)
+	return s.ctx.ConsumeWASMGas(s.cost)
 }
 
 func NewStaticGasRule(cost int64) *StaticGasRule {
@@ -44,5 +44,5 @@ func NewDynamicGasRule(fixedCost int64, multiplier int64) *DynamicGasRule {
 }
 
 func (d *DynamicGasRule) ConsumeGas(dataSize int64) error {
-	return d.ctx.ConsumeGas(d.fixedCost + dataSize*d.multiplier)
+	return d.ctx.ConsumeWASMGas(d.fixedCost + dataSize*d.multiplier)
 }

@@ -103,7 +103,16 @@ func (c *Context) gasCounter() (*wasmtime.Global, error) {
 	return c.gasCounterGlobal, nil
 }
 
-func (c *Context) RemainingGas() (int64, error) {
+func (c *Context) RemainingEVMGas() (int64, error) {
+	leftover, err := c.RemainingWASMGas()
+	if err != nil {
+		return leftover, err
+	}
+
+	return leftover / types.EVMGasToWASMGasMultiplier, nil
+}
+
+func (c *Context) RemainingWASMGas() (int64, error) {
 	gasCounter, err := c.gasCounter()
 	if err != nil {
 		return 0, err
@@ -114,10 +123,10 @@ func (c *Context) RemainingGas() (int64, error) {
 		return 0, types.OutOfGasError
 	}
 
-	return leftover / types.EVMGasToWASMGasMultiplier, nil
+	return leftover, nil
 }
 
-func (c *Context) ConsumeGas(gas int64) error {
+func (c *Context) ConsumeWASMGas(gas int64) error {
 	gasCounter, err := c.gasCounter()
 	if err != nil {
 		return err
@@ -125,7 +134,10 @@ func (c *Context) ConsumeGas(gas int64) error {
 
 	leftover := gasCounter.Get(c.Store).I64()
 	if leftover < gas {
-		return errors.New("out of gas")
+		if err := gasCounter.Set(c.Store, wasmtime.ValI64(-1)); err != nil {
+			return err
+		}
+		return types.OutOfGasError
 	}
 
 	if err := gasCounter.Set(c.Store, wasmtime.ValI64(leftover-gas)); err != nil {
@@ -135,7 +147,7 @@ func (c *Context) ConsumeGas(gas int64) error {
 	return nil
 }
 
-func (c *Context) AddGas(gas int64) error {
+func (c *Context) AddEVMGas(gas int64) error {
 	// check overflow
 	if gas > types.MaxGas {
 		return errors.New("gas overflow")
@@ -147,6 +159,19 @@ func (c *Context) AddGas(gas int64) error {
 	}
 
 	if err := gasCounter.Set(c.Store, wasmtime.ValI64(gas*types.EVMGasToWASMGasMultiplier)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Context) SetWASMGas(gas int64) error {
+	gasCounter, err := c.gasCounter()
+	if err != nil {
+		return err
+	}
+
+	if err := gasCounter.Set(c.Store, wasmtime.ValI64(gas)); err != nil {
 		return err
 	}
 

@@ -17,13 +17,26 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type mockedHostContext struct {
+	gas uint64
+}
+
+func (m *mockedHostContext) RemainingGas() uint64 {
+	return m.gas
+}
+
+func (m *mockedHostContext) SetGas(gas uint64) {
+	m.gas = gas
+}
+
 // Helper: init hostAPI collection(@see type script impl :: declare)
 func addApis(t *testing.T, hostApis *types.HostAPIRegistry) error {
 	err := hostApis.AddAPI("runtime_test", "test", "hello", &types.HostFuncWithGasRule{
 		Func: func(arg string) (string, error) {
 			return "hello-" + arg + "-hello", nil
 		},
-		GasRule: types.NewStaticGasRule(1),
+		GasRule:     types.NewStaticGasRule(1),
+		HostContext: &mockedHostContext{},
 	})
 	if err != nil {
 		return err
@@ -33,7 +46,8 @@ func addApis(t *testing.T, hostApis *types.HostAPIRegistry) error {
 			tmp := arg2 + arg3
 			return arg1 + "-" + tmp, nil
 		},
-		GasRule: types.NewStaticGasRule(1),
+		GasRule:     types.NewStaticGasRule(1),
+		HostContext: &mockedHostContext{},
 	})
 	if err != nil {
 		return err
@@ -43,7 +57,8 @@ func addApis(t *testing.T, hostApis *types.HostAPIRegistry) error {
 			require.Equal(t, "greet3-hello", arg)
 			return nil
 		},
-		GasRule: types.NewStaticGasRule(1),
+		GasRule:     types.NewStaticGasRule(1),
+		HostContext: &mockedHostContext{},
 	})
 	if err != nil {
 		return err
@@ -52,7 +67,8 @@ func addApis(t *testing.T, hostApis *types.HostAPIRegistry) error {
 		Func: func(arg string) (string, error) {
 			return "", errors.New("error")
 		},
-		GasRule: types.NewStaticGasRule(1),
+		GasRule:     types.NewStaticGasRule(1),
+		HostContext: &mockedHostContext{},
 	})
 	if err != nil {
 		return err
@@ -66,7 +82,8 @@ func TestAddApi(t *testing.T) {
 		Func: func(arg string) (string, error) {
 			return "", errors.New("error")
 		},
-		GasRule: types.NewStaticGasRule(1),
+		GasRule:     types.NewStaticGasRule(1),
+		HostContext: &mockedHostContext{},
 	})
 	if err != nil {
 		return

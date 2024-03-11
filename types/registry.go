@@ -9,8 +9,9 @@ type (
 type HostFuncWrapper func(apiRegistry *HostAPIRegistry, hostFunc *HostFuncWithGasRule) (interface{}, error)
 
 type HostFuncWithGasRule struct {
-	Func    interface{}
-	GasRule HostFuncGasRule
+	Func        interface{}
+	GasRule     HostFuncGasRule
+	HostContext HostContext
 }
 
 type HostAPIRegistry struct {
@@ -20,7 +21,7 @@ type HostAPIRegistry struct {
 	hostFuncWrapper HostFuncWrapper
 
 	// nolint
-	ctx Context
+	ctx VMContext
 }
 
 func NewHostAPIRegistry(hostFuncWrapper HostFuncWrapper) *HostAPIRegistry {
@@ -30,7 +31,7 @@ func NewHostAPIRegistry(hostFuncWrapper HostFuncWrapper) *HostAPIRegistry {
 	}
 }
 
-func (h *HostAPIRegistry) Context() Context {
+func (h *HostAPIRegistry) Context() VMContext {
 	return h.ctx
 }
 
@@ -56,6 +57,6 @@ func (h *HostAPIRegistry) WrapperFuncs() map[Module]map[NameSpace]map[MethodName
 	return h.wrapperFuncs
 }
 
-func (h *HostAPIRegistry) SetContext(ctx Context) {
+func (h *HostAPIRegistry) SetContext(ctx VMContext) {
 	h.ctx = ctx
 }

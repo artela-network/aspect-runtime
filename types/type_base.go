@@ -13,15 +13,22 @@ type IType interface {
 	Unmarshal(data []byte) (interface{}, error)
 }
 
-type Context interface {
+type HostContext interface {
+	RemainingGas() uint64
+	SetGas(gas uint64)
+}
+
+type VMContext interface {
 	context.Context
 
 	WriteMemory(ptr int32, data []byte) error
 	ReadMemory(ptr int32, size int32) ([]byte, error)
 	AllocMemory(size int32) (int32, error)
-	RemainingGas() (int64, error)
-	ConsumeGas(gas int64) error
-	AddGas(gas int64) error
+	RemainingEVMGas() (int64, error)
+	RemainingWASMGas() (int64, error)
+	ConsumeWASMGas(gas int64) error
+	AddEVMGas(gas int64) error
+	SetWASMGas(gas int64) error
 }
 
 type Logger interface {
