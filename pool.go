@@ -147,10 +147,10 @@ func (pool *RuntimePool) Len() int {
 	return pool.cache.Len()
 }
 
-func (pool *RuntimePool) Runtime(rtType RuntimeType, code []byte, apis *types.HostAPIRegistry) (string, types.AspectRuntime, error) {
+func (pool *RuntimePool) Runtime(ctx context.Context, rtType RuntimeType, code []byte, apis *types.HostAPIRegistry) (string, types.AspectRuntime, error) {
 	hash := hashOfRuntimeArgs(rtType, code)
 	key, rt, err := pool.get(hash)
-	if err == nil && rt.ResetStore(apis) == nil {
+	if err == nil && rt.ResetStore(ctx, apis) == nil {
 		return string(key), rt, nil
 	}
 

@@ -219,13 +219,13 @@ func (w *wasmTimeRuntime) init(gas int64) error {
 }
 
 // ResetStore reset the whole memory of wasm
-func (w *wasmTimeRuntime) ResetStore(apis *types.HostAPIRegistry) (err error) {
+func (w *wasmTimeRuntime) ResetStore(ctx context.Context, apis *types.HostAPIRegistry) (err error) {
 	w.Lock()
 	defer w.Unlock()
 
 	w.logger.Info("resetting wasm store")
 
-	w.ctx = NewContext(w.ctx.Context)
+	w.ctx = NewContext(ctx)
 	w.ctx.Store = wasmtime.NewStore(w.engine)
 	w.ctx.Store.Limiter(MaxMemorySize, -1, -1, -1, 100)
 

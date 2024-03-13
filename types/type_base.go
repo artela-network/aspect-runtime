@@ -40,7 +40,7 @@ type Logger interface {
 type AspectRuntime interface {
 	Call(method string, gas int64, args ...interface{}) (interface{}, int64, error)
 	Destroy()
-	ResetStore(apis *HostAPIRegistry) error
+	ResetStore(ctx context.Context, apis *HostAPIRegistry) error
 	Context() context.Context
 	Logger() Logger
 }
