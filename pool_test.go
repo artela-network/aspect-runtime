@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/artela-network/aspect-runtime/types"
 	"github.com/artela-network/aspect-runtime/wasmtime"
-	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/log"
 	"os"
 	"path"
@@ -32,9 +31,9 @@ func TestCallNormalWithPool(t *testing.T) {
 	pool := NewRuntimePool(context.Background(), log.New(), 10)
 
 	for i := 0; i < 12; i++ {
-		key, wasmTimeRuntime, err := pool.Runtime(WASM, raw, hostApis)
+		key, wasmTimeRuntime, err := pool.Runtime(context.Background(), WASM, raw, hostApis)
 		require.Equal(t, nil, err)
-		res, _, err := wasmTimeRuntime.Call("testIncrease", math.MaxInt64)
+		res, _, err := wasmTimeRuntime.Call("testIncrease", types.MaxGas)
 		require.Equal(t, nil, err)
 
 		// global: let sum = 0;
@@ -61,9 +60,9 @@ func TestCallNormalWithPool2(t *testing.T) {
 			return
 		}
 
-		key, wasmTimeRuntime, err := pool.Runtime(WASM, raw, hostApis)
+		key, wasmTimeRuntime, err := pool.Runtime(context.Background(), WASM, raw, hostApis)
 		require.Equal(t, nil, err)
-		res, _, err := wasmTimeRuntime.Call("testIncrease", math.MaxInt64)
+		res, _, err := wasmTimeRuntime.Call("testIncrease", types.MaxGas)
 		require.Equal(t, nil, err)
 
 		require.Equal(t, "10", res.(string))
@@ -87,7 +86,7 @@ func TestPoolPerformance(t *testing.T) {
 
 		wasmTimeRuntime, err := NewAspectRuntime(context.Background(), log.New(), WASM, raw, hostApis)
 		require.Equal(t, nil, err)
-		res, _, err := wasmTimeRuntime.Call("testIncrease", math.MaxInt64)
+		res, _, err := wasmTimeRuntime.Call("testIncrease", types.MaxGas)
 		require.Equal(t, nil, err)
 
 		require.Equal(t, "10", res.(string))
@@ -107,10 +106,10 @@ func TestPoolPerformance(t *testing.T) {
 			return
 		}
 
-		key, wasmTimeRuntime, err := pool.Runtime(WASM, raw, hostApis)
+		key, wasmTimeRuntime, err := pool.Runtime(context.Background(), WASM, raw, hostApis)
 		require.Equal(t, nil, err)
 
-		res, _, err := wasmTimeRuntime.Call("testIncrease", math.MaxInt64)
+		res, _, err := wasmTimeRuntime.Call("testIncrease", types.MaxGas)
 		require.Equal(t, nil, err)
 
 		require.Equal(t, "10", res.(string))
@@ -151,7 +150,7 @@ func TestPoolParallelPerformance(t *testing.T) {
 
 				wasmTimeRuntime, err := NewAspectRuntime(context.Background(), log.New(), WASM, raw, hostApis)
 				require.Equal(t, nil, err)
-				res, _, err := wasmTimeRuntime.Call("greet", math.MaxInt64, "abc")
+				res, _, err := wasmTimeRuntime.Call("greet", types.MaxGas, "abc")
 				require.Equal(t, nil, err)
 
 				require.Equal(t, "hello-greet-abc-hello-greet", res.(string))
@@ -185,9 +184,9 @@ func TestPoolParallelPerformance(t *testing.T) {
 					return
 				}
 
-				key, wasmTimeRuntime, err := pool.Runtime(WASM, raw, hostApis)
+				key, wasmTimeRuntime, err := pool.Runtime(context.Background(), WASM, raw, hostApis)
 				require.Equal(t, nil, err)
-				res, _, err := wasmTimeRuntime.Call("greet", math.MaxInt64, "abc")
+				res, _, err := wasmTimeRuntime.Call("greet", types.MaxGas, "abc")
 				require.Equal(t, nil, err)
 
 				require.Equal(t, "hello-greet-abc-hello-greet", res.(string))
