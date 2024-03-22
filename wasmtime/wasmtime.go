@@ -195,7 +195,7 @@ func (w *wasmTimeRuntime) call(method string, args ...interface{}) (interface{},
 			return nil, types.OutOfGasError
 		}
 
-		return nil, errors.Wrapf(err, "method %s execution fail", method)
+		return nil, errors.Wrapf(err, "method %s execution fail, err: %s", method, err.Error())
 	}
 
 	return val, nil
