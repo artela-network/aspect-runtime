@@ -166,9 +166,11 @@ func (pool *RuntimePool) Runtime(ctx context.Context, rtType RuntimeType, code [
 	}
 
 	id := uuid.New()
+	keyStr := join(id.String(), hash)
+
 	pool.logger.Info("runtime pool cache miss", "duration", time.Since(startTime).String(),
-		"hash", hash, "key", key)
-	return join(id.String(), hash), rt, nil
+		"hash", hash, "key", keyStr)
+	return keyStr, rt, nil
 }
 
 func (pool *RuntimePool) get(hash Hash) (Key, types.AspectRuntime, error) {
@@ -181,6 +183,8 @@ func (pool *RuntimePool) get(hash Hash) (Key, types.AspectRuntime, error) {
 
 // Return returns a runtime to the pool
 func (pool *RuntimePool) Return(key string, runtime types.AspectRuntime) {
+	pool.logger.Info("runtime returned", "key", key, "runtime", runtime)
+
 	// free the hostapis and ctx injected to types, in case that go runtime GC failed
 	runtime.Destroy()
 
