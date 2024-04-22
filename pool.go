@@ -11,6 +11,7 @@ import (
 	"reflect"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -148,9 +149,13 @@ func (pool *RuntimePool) Len() int {
 }
 
 func (pool *RuntimePool) Runtime(ctx context.Context, rtType RuntimeType, code []byte, apis *types.HostAPIRegistry) (string, types.AspectRuntime, error) {
+	startTime := time.Now()
+
 	hash := hashOfRuntimeArgs(rtType, code)
 	key, rt, err := pool.get(hash)
 	if err == nil && rt.ResetStore(ctx, apis) == nil {
+		pool.logger.Info("runtime pool cache hit", "duration", time.Since(startTime).String(),
+			"hash", hash, "key", key)
 		return string(key), rt, nil
 	}
 
@@ -161,6 +166,8 @@ func (pool *RuntimePool) Runtime(ctx context.Context, rtType RuntimeType, code [
 	}
 
 	id := uuid.New()
+	pool.logger.Info("runtime pool cache miss", "duration", time.Since(startTime).String(),
+		"hash", hash, "key", key)
 	return join(id.String(), hash), rt, nil
 }
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"runtime/debug"
 	"sync"
+	"time"
 
 	"github.com/bytecodealliance/wasmtime-go/v14"
 	"github.com/pkg/errors"
@@ -45,7 +46,7 @@ func NewWASMTimeRuntime(ctx context.Context, logger types.Logger, code []byte, a
 	}
 
 	// init runtime context
-	watvm.ctx = NewContext(ctx)
+	watvm.ctx = NewContext(ctx, logger)
 	watvm.ctx.Store = wasmtime.NewStore(watvm.engine)
 	// limit memory size to 32MB for now
 	watvm.ctx.Store.Limiter(MaxMemorySize, -1, -1, -1, 100)
@@ -91,7 +92,16 @@ func (w *wasmTimeRuntime) Logger() types.Logger {
 }
 
 // Call wasm
-func (w *wasmTimeRuntime) Call(method string, gas int64, args ...interface{}) (interface{}, int64, error) {
+func (w *wasmTimeRuntime) Call(method string, gas int64, args ...interface{}) (res interface{}, leftover int64, err error) {
+	startTime := time.Now()
+
+	defer func() {
+		w.logger.Info("aspect execution done",
+			"duration", time.Since(startTime).String(),
+			"remainingGas", leftover,
+			"err", err.Error())
+	}()
+
 	w.Lock()
 	defer w.Unlock()
 
@@ -151,7 +161,7 @@ func (w *wasmTimeRuntime) Call(method string, gas int64, args ...interface{}) (i
 		return nil, leftover, errors.Errorf("read output failed, %v", err)
 	}
 
-	res, err := resType.Unmarshal(retData)
+	res, err = resType.Unmarshal(retData)
 	if err != nil {
 		w.logger.Error("failed to unmarshal return value", "err", err)
 		return nil, leftover, errors.Errorf("read output failed, %v", err)
@@ -225,7 +235,7 @@ func (w *wasmTimeRuntime) ResetStore(ctx context.Context, apis *types.HostAPIReg
 
 	w.logger.Info("resetting wasm store")
 
-	w.ctx = NewContext(ctx)
+	w.ctx = NewContext(ctx, w.logger)
 	w.ctx.Store = wasmtime.NewStore(w.engine)
 	w.ctx.Store.Limiter(MaxMemorySize, -1, -1, -1, 100)
 

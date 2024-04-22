@@ -10,6 +10,8 @@ import (
 type Context struct {
 	context.Context
 
+	logger types.Logger
+
 	// memory *Memory
 	Instance *wasmtime.Instance
 	Store    *wasmtime.Store
@@ -17,10 +19,15 @@ type Context struct {
 	gasCounterGlobal *wasmtime.Global
 }
 
-func NewContext(ctx context.Context) *Context {
+func NewContext(ctx context.Context, logger types.Logger) *Context {
 	return &Context{
 		Context: ctx,
+		logger:  logger,
 	}
+}
+
+func (c *Context) Logger() types.Logger {
+	return c.logger
 }
 
 func (c *Context) WriteMemory(ptr int32, data []byte) error {

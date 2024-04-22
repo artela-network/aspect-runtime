@@ -6,6 +6,7 @@ import (
 	"github.com/artela-network/aspect-runtime/types"
 	"github.com/artela-network/aspect-runtime/wasmtime"
 	"github.com/pkg/errors"
+	"time"
 )
 
 type (
@@ -30,15 +31,21 @@ func NewAspectRuntime(ctx context.Context, logger types.Logger, runtimeType Runt
 		return nil, errors.New("runtime engine not support")
 	}
 
+	startTime := time.Now()
 	injectedCode, err := instrument.WasmInstrument(code)
 	if err != nil {
 		return nil, err
 	}
+	logger.Info("instrumentation done", "duration", time.Since(startTime).String(),
+		"beforeSize", len(code),
+		"afterSize", len(injectedCode))
 
+	startTime = time.Now()
 	aspectRuntime, err := engine(ctx, logger, injectedCode, apis)
 	if err != nil {
 		return nil, err
 	}
+	logger.Info("runtime created", "duration", time.Since(startTime).String())
 
 	return aspectRuntime, nil
 }

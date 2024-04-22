@@ -29,6 +29,7 @@ type VMContext interface {
 	ConsumeWASMGas(gas int64) error
 	AddEVMGas(gas int64) error
 	SetWASMGas(gas int64) error
+	Logger() Logger
 }
 
 type Logger interface {

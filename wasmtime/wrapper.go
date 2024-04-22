@@ -2,16 +2,17 @@ package wasmtime
 
 import (
 	"fmt"
-	"reflect"
-
 	"github.com/bytecodealliance/wasmtime-go/v14"
+	"reflect"
+	"time"
 
 	"github.com/pkg/errors"
 
 	types "github.com/artela-network/aspect-runtime/types"
 )
 
-func Wrap(apiRegistry *types.HostAPIRegistry, hostFunc *types.HostFuncWithGasRule) (interface{}, error) {
+func Wrap(apiRegistry *types.HostAPIRegistry, module types.Module, ns types.NameSpace, method types.MethodName,
+	hostFunc *types.HostFuncWithGasRule) (interface{}, error) {
 	errNotSupport := errors.New("host function not supported")
 
 	fn := hostFunc.Func
@@ -27,24 +28,64 @@ func Wrap(apiRegistry *types.HostAPIRegistry, hostFunc *types.HostFuncWithGasRul
 		switch t.NumIn() {
 		case 0:
 			return func() *wasmtime.Trap {
+				startTime := time.Now()
+
+				defer func() {
+					apiRegistry.Context().Logger().Info("host func done",
+						"duration", time.Since(startTime).String(),
+						"module", module,
+						"namespace", ns,
+						"method", method)
+				}()
+
 				_, trap := executeWrapper(apiRegistry.Context(), hostCtx, gasRule, fn)
 				return trap
 			}, nil
 
 		case 1:
 			return func(arg int32) *wasmtime.Trap {
+				startTime := time.Now()
+
+				defer func() {
+					apiRegistry.Context().Logger().Info("host func done",
+						"duration", time.Since(startTime).String(),
+						"module", module,
+						"namespace", ns,
+						"method", method)
+				}()
+
 				_, trap := executeWrapper(apiRegistry.Context(), hostCtx, gasRule, fn, arg)
 				return trap
 			}, nil
 
 		case 2:
 			return func(arg1 int32, arg2 int32) *wasmtime.Trap {
+				startTime := time.Now()
+
+				defer func() {
+					apiRegistry.Context().Logger().Info("host func done",
+						"duration", time.Since(startTime).String(),
+						"module", module,
+						"namespace", ns,
+						"method", method)
+				}()
+
 				_, trap := executeWrapper(apiRegistry.Context(), hostCtx, gasRule, fn, arg1, arg2)
 				return trap
 			}, nil
 
 		case 3:
 			return func(arg1 int32, arg2 int32, arg3 int32) *wasmtime.Trap {
+				startTime := time.Now()
+
+				defer func() {
+					apiRegistry.Context().Logger().Info("host func done",
+						"duration", time.Since(startTime).String(),
+						"module", module,
+						"namespace", ns,
+						"method", method)
+				}()
+
 				_, trap := executeWrapper(apiRegistry.Context(), hostCtx, gasRule, fn, arg1, arg2, arg3)
 				return trap
 			}, nil
@@ -53,6 +94,16 @@ func Wrap(apiRegistry *types.HostAPIRegistry, hostFunc *types.HostFuncWithGasRul
 		switch t.NumIn() {
 		case 0:
 			return func() (int32, *wasmtime.Trap) {
+				startTime := time.Now()
+
+				defer func() {
+					apiRegistry.Context().Logger().Info("host func done",
+						"duration", time.Since(startTime).String(),
+						"module", module,
+						"namespace", ns,
+						"method", method)
+				}()
+
 				out, trap := executeWrapper(apiRegistry.Context(), hostCtx, gasRule, fn)
 				if trap != nil {
 					return 0, trap
@@ -62,6 +113,16 @@ func Wrap(apiRegistry *types.HostAPIRegistry, hostFunc *types.HostFuncWithGasRul
 
 		case 1:
 			return func(arg int32) (int32, *wasmtime.Trap) {
+				startTime := time.Now()
+
+				defer func() {
+					apiRegistry.Context().Logger().Info("host func done",
+						"duration", time.Since(startTime).String(),
+						"module", module,
+						"namespace", ns,
+						"method", method)
+				}()
+
 				out, trap := executeWrapper(apiRegistry.Context(), hostCtx, gasRule, fn, arg)
 				if trap != nil {
 					return 0, trap
@@ -71,6 +132,16 @@ func Wrap(apiRegistry *types.HostAPIRegistry, hostFunc *types.HostFuncWithGasRul
 
 		case 2:
 			return func(arg1 int32, arg2 int32) (int32, *wasmtime.Trap) {
+				startTime := time.Now()
+
+				defer func() {
+					apiRegistry.Context().Logger().Info("host func done",
+						"duration", time.Since(startTime).String(),
+						"module", module,
+						"namespace", ns,
+						"method", method)
+				}()
+
 				out, trap := executeWrapper(apiRegistry.Context(), hostCtx, gasRule, fn, arg1, arg2)
 				if trap != nil {
 					return 0, trap
@@ -80,6 +151,16 @@ func Wrap(apiRegistry *types.HostAPIRegistry, hostFunc *types.HostFuncWithGasRul
 
 		case 3:
 			return func(arg1 int32, arg2 int32, arg3 int32) (int32, *wasmtime.Trap) {
+				startTime := time.Now()
+
+				defer func() {
+					apiRegistry.Context().Logger().Info("host func done",
+						"duration", time.Since(startTime).String(),
+						"module", module,
+						"namespace", ns,
+						"method", method)
+				}()
+
 				out, trap := executeWrapper(apiRegistry.Context(), hostCtx, gasRule, fn, arg1, arg2, arg3)
 				if trap != nil {
 					return 0, trap
