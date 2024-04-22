@@ -99,7 +99,7 @@ func (w *wasmTimeRuntime) Call(method string, gas int64, args ...interface{}) (r
 		w.logger.Info("aspect execution done",
 			"duration", time.Since(startTime).String(),
 			"remainingGas", leftover,
-			"err", err.Error())
+			"err", err)
 	}()
 
 	w.Lock()
