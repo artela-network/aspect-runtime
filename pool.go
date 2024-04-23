@@ -183,10 +183,12 @@ func (pool *RuntimePool) get(hash Hash) (Key, types.AspectRuntime, error) {
 
 // Return returns a runtime to the pool
 func (pool *RuntimePool) Return(key string, runtime types.AspectRuntime) {
-	pool.logger.Info("runtime returned", "key", key, "runtime", runtime)
-
 	// free the hostapis and ctx injected to types, in case that go runtime GC failed
+	pool.logger.Info("returning runtime", "key", key)
+
 	runtime.Destroy()
+
+	pool.logger.Info("runtime destroyed", "key", key)
 
 	entry := &Entry{
 		key:     Key(key),
@@ -194,6 +196,8 @@ func (pool *RuntimePool) Return(key string, runtime types.AspectRuntime) {
 	}
 
 	pool.cache.PushFront(entry)
+
+	pool.logger.Info("runtime returned", "key", key)
 }
 
 func hashOfRuntimeArgs(runtimeType RuntimeType, code []byte) Hash {
