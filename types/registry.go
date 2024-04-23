@@ -6,7 +6,7 @@ type (
 	MethodName string
 )
 
-type HostFuncWrapper func(apiRegistry *HostAPIRegistry, module Module, ns NameSpace, method MethodName, hostFunc *HostFuncWithGasRule) (interface{}, error)
+type HostFuncWrapper func(ctx VMContext, module Module, ns NameSpace, method MethodName, hostFunc *HostFuncWithGasRule) (interface{}, error)
 
 type HostFuncWithGasRule struct {
 	Func        interface{}
@@ -36,7 +36,7 @@ func (h *HostAPIRegistry) Context() VMContext {
 }
 
 func (h *HostAPIRegistry) AddAPI(module Module, ns NameSpace, method MethodName, hostFunc *HostFuncWithGasRule) error {
-	wrapper, err := h.hostFuncWrapper(h, module, ns, method, hostFunc)
+	wrapper, err := h.hostFuncWrapper(h.ctx, module, ns, method, hostFunc)
 	if err != nil {
 		return err
 	}
@@ -59,4 +59,8 @@ func (h *HostAPIRegistry) WrapperFuncs() map[Module]map[NameSpace]map[MethodName
 
 func (h *HostAPIRegistry) SetContext(ctx VMContext) {
 	h.ctx = ctx
+}
+
+func (h *HostAPIRegistry) Destroy() {
+	h.wrapperFuncs = nil
 }

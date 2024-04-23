@@ -11,7 +11,7 @@ import (
 	types "github.com/artela-network/aspect-runtime/types"
 )
 
-func Wrap(apiRegistry *types.HostAPIRegistry, module types.Module, ns types.NameSpace, method types.MethodName,
+func Wrap(ctx types.VMContext, module types.Module, ns types.NameSpace, method types.MethodName,
 	hostFunc *types.HostFuncWithGasRule) (interface{}, error) {
 	errNotSupport := errors.New("host function not supported")
 
@@ -31,14 +31,14 @@ func Wrap(apiRegistry *types.HostAPIRegistry, module types.Module, ns types.Name
 				startTime := time.Now()
 
 				defer func() {
-					apiRegistry.Context().Logger().Info("host func done",
+					ctx.Logger().Info("host func done",
 						"duration", time.Since(startTime).String(),
 						"module", module,
 						"namespace", ns,
 						"method", method)
 				}()
 
-				_, trap := executeWrapper(apiRegistry.Context(), hostCtx, gasRule, fn)
+				_, trap := executeWrapper(ctx, hostCtx, gasRule, fn)
 				return trap
 			}, nil
 
@@ -47,14 +47,14 @@ func Wrap(apiRegistry *types.HostAPIRegistry, module types.Module, ns types.Name
 				startTime := time.Now()
 
 				defer func() {
-					apiRegistry.Context().Logger().Info("host func done",
+					ctx.Logger().Info("host func done",
 						"duration", time.Since(startTime).String(),
 						"module", module,
 						"namespace", ns,
 						"method", method)
 				}()
 
-				_, trap := executeWrapper(apiRegistry.Context(), hostCtx, gasRule, fn, arg)
+				_, trap := executeWrapper(ctx, hostCtx, gasRule, fn, arg)
 				return trap
 			}, nil
 
@@ -63,14 +63,14 @@ func Wrap(apiRegistry *types.HostAPIRegistry, module types.Module, ns types.Name
 				startTime := time.Now()
 
 				defer func() {
-					apiRegistry.Context().Logger().Info("host func done",
+					ctx.Logger().Info("host func done",
 						"duration", time.Since(startTime).String(),
 						"module", module,
 						"namespace", ns,
 						"method", method)
 				}()
 
-				_, trap := executeWrapper(apiRegistry.Context(), hostCtx, gasRule, fn, arg1, arg2)
+				_, trap := executeWrapper(ctx, hostCtx, gasRule, fn, arg1, arg2)
 				return trap
 			}, nil
 
@@ -79,14 +79,14 @@ func Wrap(apiRegistry *types.HostAPIRegistry, module types.Module, ns types.Name
 				startTime := time.Now()
 
 				defer func() {
-					apiRegistry.Context().Logger().Info("host func done",
+					ctx.Logger().Info("host func done",
 						"duration", time.Since(startTime).String(),
 						"module", module,
 						"namespace", ns,
 						"method", method)
 				}()
 
-				_, trap := executeWrapper(apiRegistry.Context(), hostCtx, gasRule, fn, arg1, arg2, arg3)
+				_, trap := executeWrapper(ctx, hostCtx, gasRule, fn, arg1, arg2, arg3)
 				return trap
 			}, nil
 		}
@@ -97,14 +97,14 @@ func Wrap(apiRegistry *types.HostAPIRegistry, module types.Module, ns types.Name
 				startTime := time.Now()
 
 				defer func() {
-					apiRegistry.Context().Logger().Info("host func done",
+					ctx.Logger().Info("host func done",
 						"duration", time.Since(startTime).String(),
 						"module", module,
 						"namespace", ns,
 						"method", method)
 				}()
 
-				out, trap := executeWrapper(apiRegistry.Context(), hostCtx, gasRule, fn)
+				out, trap := executeWrapper(ctx, hostCtx, gasRule, fn)
 				if trap != nil {
 					return 0, trap
 				}
@@ -116,14 +116,14 @@ func Wrap(apiRegistry *types.HostAPIRegistry, module types.Module, ns types.Name
 				startTime := time.Now()
 
 				defer func() {
-					apiRegistry.Context().Logger().Info("host func done",
+					ctx.Logger().Info("host func done",
 						"duration", time.Since(startTime).String(),
 						"module", module,
 						"namespace", ns,
 						"method", method)
 				}()
 
-				out, trap := executeWrapper(apiRegistry.Context(), hostCtx, gasRule, fn, arg)
+				out, trap := executeWrapper(ctx, hostCtx, gasRule, fn, arg)
 				if trap != nil {
 					return 0, trap
 				}
@@ -135,14 +135,14 @@ func Wrap(apiRegistry *types.HostAPIRegistry, module types.Module, ns types.Name
 				startTime := time.Now()
 
 				defer func() {
-					apiRegistry.Context().Logger().Info("host func done",
+					ctx.Logger().Info("host func done",
 						"duration", time.Since(startTime).String(),
 						"module", module,
 						"namespace", ns,
 						"method", method)
 				}()
 
-				out, trap := executeWrapper(apiRegistry.Context(), hostCtx, gasRule, fn, arg1, arg2)
+				out, trap := executeWrapper(ctx, hostCtx, gasRule, fn, arg1, arg2)
 				if trap != nil {
 					return 0, trap
 				}
@@ -154,14 +154,14 @@ func Wrap(apiRegistry *types.HostAPIRegistry, module types.Module, ns types.Name
 				startTime := time.Now()
 
 				defer func() {
-					apiRegistry.Context().Logger().Info("host func done",
+					ctx.Logger().Info("host func done",
 						"duration", time.Since(startTime).String(),
 						"module", module,
 						"namespace", ns,
 						"method", method)
 				}()
 
-				out, trap := executeWrapper(apiRegistry.Context(), hostCtx, gasRule, fn, arg1, arg2, arg3)
+				out, trap := executeWrapper(ctx, hostCtx, gasRule, fn, arg1, arg2, arg3)
 				if trap != nil {
 					return 0, trap
 				}
