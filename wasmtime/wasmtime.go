@@ -233,6 +233,13 @@ func (w *wasmTimeRuntime) ResetStore(ctx context.Context, apis *types.HostAPIReg
 	w.Lock()
 	defer w.Unlock()
 
+	defer func() {
+		if r := recover(); r != nil {
+			err = errors.New(fmt.Sprintln(r))
+			w.logger.Error("reset wasm store panic", "err", r, "stack", debug.Stack())
+		}
+	}()
+
 	w.logger.Info("resetting wasm store")
 
 	w.ctx = NewContext(ctx, w.logger)
