@@ -31,7 +31,7 @@ func Wrap(api *types.HostAPIRegistry, module types.Module, ns types.NameSpace, m
 				startTime := time.Now()
 
 				defer func() {
-					api.Context().Logger().Info("host func done",
+					api.Context().Logger().Debug("host func done",
 						"duration", time.Since(startTime).String(),
 						"module", module,
 						"namespace", ns,
@@ -47,7 +47,7 @@ func Wrap(api *types.HostAPIRegistry, module types.Module, ns types.NameSpace, m
 				startTime := time.Now()
 
 				defer func() {
-					api.Context().Logger().Info("host func done",
+					api.Context().Logger().Debug("host func done",
 						"duration", time.Since(startTime).String(),
 						"module", module,
 						"namespace", ns,
@@ -63,7 +63,7 @@ func Wrap(api *types.HostAPIRegistry, module types.Module, ns types.NameSpace, m
 				startTime := time.Now()
 
 				defer func() {
-					api.Context().Logger().Info("host func done",
+					api.Context().Logger().Debug("host func done",
 						"duration", time.Since(startTime).String(),
 						"module", module,
 						"namespace", ns,
@@ -79,7 +79,7 @@ func Wrap(api *types.HostAPIRegistry, module types.Module, ns types.NameSpace, m
 				startTime := time.Now()
 
 				defer func() {
-					api.Context().Logger().Info("host func done",
+					api.Context().Logger().Debug("host func done",
 						"duration", time.Since(startTime).String(),
 						"module", module,
 						"namespace", ns,
@@ -97,7 +97,7 @@ func Wrap(api *types.HostAPIRegistry, module types.Module, ns types.NameSpace, m
 				startTime := time.Now()
 
 				defer func() {
-					api.Context().Logger().Info("host func done",
+					api.Context().Logger().Debug("host func done",
 						"duration", time.Since(startTime).String(),
 						"module", module,
 						"namespace", ns,
@@ -116,7 +116,7 @@ func Wrap(api *types.HostAPIRegistry, module types.Module, ns types.NameSpace, m
 				startTime := time.Now()
 
 				defer func() {
-					api.Context().Logger().Info("host func done",
+					api.Context().Logger().Debug("host func done",
 						"duration", time.Since(startTime).String(),
 						"module", module,
 						"namespace", ns,
@@ -135,7 +135,7 @@ func Wrap(api *types.HostAPIRegistry, module types.Module, ns types.NameSpace, m
 				startTime := time.Now()
 
 				defer func() {
-					api.Context().Logger().Info("host func done",
+					api.Context().Logger().Debug("host func done",
 						"duration", time.Since(startTime).String(),
 						"module", module,
 						"namespace", ns,
@@ -154,7 +154,7 @@ func Wrap(api *types.HostAPIRegistry, module types.Module, ns types.NameSpace, m
 				startTime := time.Now()
 
 				defer func() {
-					api.Context().Logger().Info("host func done",
+					api.Context().Logger().Debug("host func done",
 						"duration", time.Since(startTime).String(),
 						"module", module,
 						"namespace", ns,

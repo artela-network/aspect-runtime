@@ -16,7 +16,7 @@ type Context struct {
 	Instance *wasmtime.Instance
 	Store    *wasmtime.Store
 
-	//gasCounterGlobal *wasmtime.Global
+	gasCounterGlobal *wasmtime.Global
 }
 
 func NewContext(ctx context.Context, logger types.Logger) *Context {
@@ -63,7 +63,7 @@ func (c *Context) ReadMemory(ptr int32, size int32) ([]byte, error) {
 func (c *Context) Reset() {
 	c.Instance = nil
 	c.Store = nil
-	//c.gasCounterGlobal = nil
+	c.gasCounterGlobal = nil
 }
 
 func (c *Context) memory() ([]byte, error) {
@@ -97,17 +97,17 @@ func (c *Context) AllocMemory(size int32) (int32, error) {
 // gasCounter get the gas counter from wasm,
 // "__gas_counter__" global variable is an i64 injected by wasm instrument lib
 func (c *Context) gasCounter() (*wasmtime.Global, error) {
-	//if c.gasCounterGlobal != nil {
-	//	return c.gasCounterGlobal, nil
-	//}
+	if c.gasCounterGlobal != nil {
+		return c.gasCounterGlobal, nil
+	}
 
 	export := c.Instance.GetExport(c.Store, "__gas_counter__")
 	if export == nil {
 		return nil, errors.New("gas counter not exported")
 	}
 
-	//c.gasCounterGlobal = export.Global()
-	return export.Global(), nil
+	c.gasCounterGlobal = export.Global()
+	return c.gasCounterGlobal, nil
 }
 
 func (c *Context) RemainingEVMGas() (int64, error) {

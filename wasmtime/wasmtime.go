@@ -96,7 +96,7 @@ func (w *wasmTimeRuntime) Call(method string, gas int64, args ...interface{}) (r
 	startTime := time.Now()
 
 	defer func() {
-		w.logger.Info("aspect execution done",
+		w.logger.Debug("aspect execution done",
 			"duration", time.Since(startTime).String(),
 			"remainingGas", leftover,
 			"err", err)
@@ -240,7 +240,7 @@ func (w *wasmTimeRuntime) ResetStore(ctx context.Context, apis *types.HostAPIReg
 		}
 	}()
 
-	w.logger.Info("resetting wasm store")
+	w.logger.Debug("resetting wasm store")
 
 	w.ctx = NewContext(ctx, w.logger)
 	w.ctx.Store = wasmtime.NewStore(w.engine)

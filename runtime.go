@@ -36,7 +36,7 @@ func NewAspectRuntime(ctx context.Context, logger types.Logger, runtimeType Runt
 	if err != nil {
 		return nil, err
 	}
-	logger.Info("instrumentation done", "duration", time.Since(startTime).String(),
+	logger.Debug("instrumentation done", "duration", time.Since(startTime).String(),
 		"beforeSize", len(code),
 		"afterSize", len(injectedCode))
 
@@ -45,7 +45,7 @@ func NewAspectRuntime(ctx context.Context, logger types.Logger, runtimeType Runt
 	if err != nil {
 		return nil, err
 	}
-	logger.Info("runtime created", "duration", time.Since(startTime).String())
+	logger.Debug("runtime created", "duration", time.Since(startTime).String())
 
 	return aspectRuntime, nil
 }
