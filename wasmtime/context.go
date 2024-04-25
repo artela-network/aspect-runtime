@@ -16,7 +16,7 @@ type Context struct {
 	Instance *wasmtime.Instance
 	Store    *wasmtime.Store
 
-	//gasCounterGlobal *wasmtime.Global
+	gasCounterGlobal *wasmtime.Global
 }
 
 func NewContext(ctx context.Context, logger types.Logger) *Context {
@@ -97,17 +97,17 @@ func (c *Context) AllocMemory(size int32) (int32, error) {
 // gasCounter get the gas counter from wasm,
 // "__gas_counter__" global variable is an i64 injected by wasm instrument lib
 func (c *Context) gasCounter() (*wasmtime.Global, error) {
-	//if c.gasCounterGlobal != nil {
-	//	return c.gasCounterGlobal, nil
-	//}
+	if c.gasCounterGlobal != nil {
+		return c.gasCounterGlobal, nil
+	}
 
 	export := c.Instance.GetExport(c.Store, "__gas_counter__")
 	if export == nil {
 		return nil, errors.New("gas counter not exported")
 	}
 
-	//c.gasCounterGlobal = export.Global()
-	return export.Global(), nil
+	c.gasCounterGlobal = export.Global()
+	return c.gasCounterGlobal, nil
 }
 
 func (c *Context) RemainingEVMGas() (int64, error) {
@@ -120,67 +120,68 @@ func (c *Context) RemainingEVMGas() (int64, error) {
 }
 
 func (c *Context) RemainingWASMGas() (int64, error) {
-	gasCounter, err := c.gasCounter()
-	if err != nil {
-		return 0, err
-	}
-
-	leftover := gasCounter.Get(c.Store).I64()
-	if leftover < 0 {
-		return 0, types.OutOfGasError
-	}
-
-	return leftover, nil
+	//gasCounter, err := c.gasCounter()
+	//if err != nil {
+	//	return 0, err
+	//}
+	//
+	//leftover := gasCounter.Get(c.Store).I64()
+	//if leftover < 0 {
+	//	return 0, types.OutOfGasError
+	//}
+	//
+	//return leftover, nil
+	return 0, nil
 }
 
 func (c *Context) ConsumeWASMGas(gas int64) error {
-	gasCounter, err := c.gasCounter()
-	if err != nil {
-		return err
-	}
-
-	leftover := gasCounter.Get(c.Store).I64()
-	if leftover < gas {
-		if err := gasCounter.Set(c.Store, wasmtime.ValI64(-1)); err != nil {
-			return err
-		}
-		return types.OutOfGasError
-	}
-
-	if err := gasCounter.Set(c.Store, wasmtime.ValI64(leftover-gas)); err != nil {
-		return err
-	}
+	//gasCounter, err := c.gasCounter()
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//leftover := gasCounter.Get(c.Store).I64()
+	//if leftover < gas {
+	//	if err := gasCounter.Set(c.Store, wasmtime.ValI64(-1)); err != nil {
+	//		return err
+	//	}
+	//	return types.OutOfGasError
+	//}
+	//
+	//if err := gasCounter.Set(c.Store, wasmtime.ValI64(leftover-gas)); err != nil {
+	//	return err
+	//}
 
 	return nil
 }
 
 func (c *Context) AddEVMGas(gas int64) error {
 	// check overflow
-	if gas > types.MaxGas {
-		return errors.New("gas overflow")
-	}
-
-	gasCounter, err := c.gasCounter()
-	if err != nil {
-		return err
-	}
-
-	if err := gasCounter.Set(c.Store, wasmtime.ValI64(gas*types.EVMGasToWASMGasMultiplier)); err != nil {
-		return err
-	}
+	//if gas > types.MaxGas {
+	//	return errors.New("gas overflow")
+	//}
+	//
+	//gasCounter, err := c.gasCounter()
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//if err := gasCounter.Set(c.Store, wasmtime.ValI64(gas*types.EVMGasToWASMGasMultiplier)); err != nil {
+	//	return err
+	//}
 
 	return nil
 }
 
 func (c *Context) SetWASMGas(gas int64) error {
-	gasCounter, err := c.gasCounter()
-	if err != nil {
-		return err
-	}
-
-	if err := gasCounter.Set(c.Store, wasmtime.ValI64(gas)); err != nil {
-		return err
-	}
+	//gasCounter, err := c.gasCounter()
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//if err := gasCounter.Set(c.Store, wasmtime.ValI64(gas)); err != nil {
+	//	return err
+	//}
 
 	return nil
 }
