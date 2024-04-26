@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bytecodealliance/wasmtime-go/v14"
+	wasmtime "github.com/bytecodealliance/wasmtime-go/v20"
 	"github.com/pkg/errors"
 
 	"github.com/artela-network/aspect-runtime/types"
@@ -328,6 +328,8 @@ func defaultWASMTimeConfig() *wasmtime.Config {
 	config := wasmtime.NewConfig()
 	// we don't quite need this, discuss later
 	config.SetWasmSIMD(false)
+	// cannot enable RelaxedSIMD when SIMD is disabled
+	config.SetWasmRelaxedSIMD(false)
 	// affect execution certainty, disable
 	config.SetWasmThreads(false)
 	// multi-value return is useful, should be enabled
@@ -340,6 +342,29 @@ func defaultWASMTimeConfig() *wasmtime.Config {
 	config.SetWasmBulkMemory(false)
 	// reference type must be disabled, this relies on bulk memory
 	config.SetWasmReferenceTypes(false)
+
+	// enables selecting the "static" option for all linear memories
+	config.SetStaticMemoryForced(true)
+	// configures the size of linear memory to reserve for each memory in the
+	// pooling allocator.
+	// lock to 10MB here.
+	config.SetStaticMemoryMaximumSize(10 * (1 << 20))
+	// configures the size, in bytes, of the guard region used at the end of a
+	// static memory's address space reservation.
+	// default to 2GB on 64-bit platforms, 64K on 32-bit platforms.
+	// lock to 64K here.
+	config.SetStaticMemoryGuardSize(0x1_0000)
+	// configures the size, in bytes, of the extra virtual memory space
+	// reserved after a "dynamic" memory for growing into.
+	// for 64-bit platforms this defaults to 2GB, and for 32-bit platforms this
+	// defaults to 1MB.
+	// lock to 1MB here.
+	config.SetDynamicMemoryReservedForGrowth(1 << 20)
+	// configures the size, in bytes, of the guard region used at the end of a
+	// dynamic memory's address space reservation.
+	// This value defaults to 64KB.
+	// lock to 64K here.
+	config.SetDynamicMemoryGuardSize(0x1_0000)
 
 	return config
 }
