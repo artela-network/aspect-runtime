@@ -3,8 +3,9 @@ package wasmtime
 import (
 	"context"
 	"errors"
+
 	"github.com/artela-network/aspect-runtime/types"
-	"github.com/bytecodealliance/wasmtime-go/v14"
+	wasmtime "github.com/bytecodealliance/wasmtime-go/v20"
 )
 
 type Context struct {

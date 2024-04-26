@@ -2,10 +2,10 @@ package wasmtime
 
 import (
 	"fmt"
-	"github.com/bytecodealliance/wasmtime-go/v14"
 	"reflect"
 	"time"
 
+	wasmtime "github.com/bytecodealliance/wasmtime-go/v20"
 	"github.com/pkg/errors"
 
 	types "github.com/artela-network/aspect-runtime/types"
