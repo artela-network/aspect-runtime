@@ -2,8 +2,6 @@ package types
 
 import (
 	"context"
-
-	"github.com/bytecodealliance/wasmtime-go/v14"
 )
 
 // IType is the interface of all runtime types
@@ -15,24 +13,35 @@ type IType interface {
 	Unmarshal(data []byte) (interface{}, error)
 }
 
-type Context struct {
+type HostContext interface {
+	RemainingGas() uint64
+	SetGas(gas uint64)
+}
+
+type VMContext interface {
 	context.Context
 
-	// memory *Memory
-	Instance *wasmtime.Instance
-	Store    *wasmtime.Store
+	WriteMemory(ptr int32, data []byte) error
+	ReadMemory(ptr int32, size int32) ([]byte, error)
+	AllocMemory(size int32) (int32, error)
+	RemainingEVMGas() (int64, error)
+	RemainingWASMGas() (int64, error)
+	ConsumeWASMGas(gas int64) error
+	AddEVMGas(gas int64) error
+	SetWASMGas(gas int64) error
+	Logger() Logger
 }
 
-func NewContext(ctx context.Context) *Context {
-	return &Context{
-		Context: ctx,
-	}
+type Logger interface {
+	Debug(msg string, keyvals ...interface{})
+	Info(msg string, keyvals ...interface{})
+	Error(msg string, keyvals ...interface{})
 }
 
-func (c *Context) SetInstance(
-	instance *wasmtime.Instance,
-	store *wasmtime.Store,
-) {
-	c.Instance = instance
-	c.Store = store
+type AspectRuntime interface {
+	Call(method string, gas int64, args ...interface{}) (interface{}, int64, error)
+	Destroy()
+	ResetStore(ctx context.Context, apis *HostAPIRegistry) error
+	Context() context.Context
+	Logger() Logger
 }
