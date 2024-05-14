@@ -18,4 +18,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/bytecodealliance/wasmtime-go/v20 => github.com/artela-network/wasmtime-go/v20 v20.0.0
+replace github.com/bytecodealliance/wasmtime-go/v20 => github.com/artela-network/wasmtime-go/v20 v20.0.2
