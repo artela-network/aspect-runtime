@@ -18,6 +18,7 @@ type Context struct {
 	Store    *wasmtime.Store
 
 	gasCounterGlobal *wasmtime.Global
+	allocator        *wasmtime.Func
 }
 
 func NewContext(ctx context.Context, logger types.Logger) *Context {
@@ -85,12 +86,14 @@ func (c *Context) memory() ([]byte, error) {
 }
 
 func (c *Context) AllocMemory(size int32) (int32, error) {
-	memoryAllocator := c.Instance.GetFunc(c.Store, "allocate")
-	if memoryAllocator == nil {
-		return 0, errors.New("function 'allocate' does not exist")
+	if c.allocator == nil {
+		c.allocator = c.Instance.GetFunc(c.Store, "allocate")
+		if c.allocator == nil {
+			return 0, errors.New("function 'allocate' does not exist")
+		}
 	}
 
-	res, err := memoryAllocator.Call(c.Store, size)
+	res, err := c.allocator.Call(c.Store, size)
 	if err != nil {
 		return 0, err
 	}
@@ -111,7 +114,7 @@ func (c *Context) gasCounter() (*wasmtime.Global, error) {
 	}
 
 	c.gasCounterGlobal = export.Global()
-	return c.gasCounterGlobal, nil
+	return export.Global(), nil
 }
 
 func (c *Context) RemainingEVMGas() (int64, error) {

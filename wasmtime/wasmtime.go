@@ -105,7 +105,7 @@ func (w *wasmTimeRuntime) Call(method string, gas int64, args ...interface{}) (r
 	w.Lock()
 	defer w.Unlock()
 
-	w.logger.Info("calling aspect", "method", method, "gas", gas, "args", args)
+	w.logger.Info("calling aspect", "method", method, "gas", gas)
 	w.logger.Debug("initializing aspect")
 	if err := w.init(gas); err != nil {
 		return nil, 0, errors.Errorf("aspect init failed, %v", err)
