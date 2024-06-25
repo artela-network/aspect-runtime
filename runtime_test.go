@@ -29,6 +29,9 @@ func (m *mockedHostContext) SetGas(gas uint64) {
 	m.gas = gas
 }
 
+func (m *mockedHostContext) SetVMContext(_ types.VMContext) {
+}
+
 // Helper: init hostAPI collection(@see type script impl :: declare)
 func addApis(t *testing.T, hostApis *types.HostAPIRegistry) error {
 	err := hostApis.AddAPI("runtime_test", "test", "hello", &types.HostFuncWithGasRule{
@@ -77,7 +80,7 @@ func addApis(t *testing.T, hostApis *types.HostAPIRegistry) error {
 }
 
 func TestAddApi(t *testing.T) {
-	hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
+	hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
 	err := hostApis.AddAPI("index", "test", "hello4", &types.HostFuncWithGasRule{
 		Func: func(arg string) (string, error) {
 			return "", errors.New("error")
@@ -95,7 +98,7 @@ func TestCallEmptyStr(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
-	hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
+	hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
 
 	var (
 		arg             string = ""
@@ -123,7 +126,7 @@ func TestInfiniteLoop(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
-	hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
+	hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
 
 	err := addApis(t, hostApis)
 	if err != nil {
@@ -143,7 +146,7 @@ func TestInfiniteLoop(t *testing.T) {
 func TestFib(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
-	hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
+	hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
 
 	err := addApis(t, hostApis)
 	if err != nil {
@@ -165,7 +168,7 @@ func TestCallNormal(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
-	hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
+	hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
 
 	var (
 		arg             string = "abcd"
@@ -196,7 +199,7 @@ func TestCallMultiArgs(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
-	hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
+	hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
 
 	var (
 		arg1            string = "bonjour"
@@ -229,7 +232,7 @@ func TestBytesNormal(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
-	hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
+	hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
 
 	testErr := addApis(t, hostApis)
 	if testErr != nil {
@@ -257,7 +260,7 @@ func TestCallHostApiNoReturn(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
-	hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
+	hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
 
 	errapi := addApis(t, hostApis)
 	if errapi != nil {
@@ -286,7 +289,7 @@ func TestBytesNil(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
-	hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
+	hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
 
 	addErr := addApis(t, hostApis)
 	if addErr != nil {
@@ -315,7 +318,7 @@ func TestLongString(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
-	hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
+	hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
 
 	var (
 		arg             string = ""
