@@ -16,6 +16,7 @@ type IType interface {
 type HostContext interface {
 	RemainingGas() uint64
 	SetGas(gas uint64)
+	SetVMContext(vmContext VMContext)
 }
 
 type VMContext interface {
