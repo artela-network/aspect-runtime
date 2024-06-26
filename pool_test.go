@@ -22,7 +22,7 @@ func TestCallNormalWithPool(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
-	hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
+	hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
 	err := addApis(t, hostApis)
 	if err != nil {
 		return
@@ -53,7 +53,7 @@ func TestCallNormalWithPool2(t *testing.T) {
 	pool := NewRuntimePool(context.Background(), log.New(), 10)
 
 	for i := 0; i < 12; i++ {
-		hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
+		hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
 		// nolint
 		err := addApis(t, hostApis)
 		if err != nil {
@@ -78,7 +78,7 @@ func TestPoolPerformance(t *testing.T) {
 	// call without pool
 	t1 := time.Now()
 	for i := 0; i < 100; i++ {
-		hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
+		hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
 		err := addApis(t, hostApis)
 		if err != nil {
 			return
@@ -100,7 +100,7 @@ func TestPoolPerformance(t *testing.T) {
 	pool := NewRuntimePool(context.Background(), log.New(), 10)
 	t2 := time.Now()
 	for i := 0; i < 100; i++ {
-		hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
+		hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
 		err := addApis(t, hostApis)
 		if err != nil {
 			return
@@ -142,7 +142,7 @@ func TestPoolParallelPerformance(t *testing.T) {
 			// 	time.Sleep(time.Duration(poolsize) * time.Millisecond)
 			// }
 			go func() {
-				hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
+				hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
 				err := addApis(t, hostApis)
 				if err != nil {
 					return
@@ -178,7 +178,7 @@ func TestPoolParallelPerformance(t *testing.T) {
 			// 	time.Sleep(time.Duration(poolsize) * time.Millisecond)
 			// }
 			go func() {
-				hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
+				hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
 				err := addApis(t, hostApis)
 				if err != nil {
 					return
