@@ -18,17 +18,14 @@ const (
 )
 
 type wasmTimeValidator struct {
-	engine *wasmtime.Engine
 }
 
 func NewWASMTimeValidator(ctx context.Context, logger types.Logger) (types.Validator, error) {
-	return &wasmTimeValidator{
-		engine: wasmtime.NewEngineWithConfig(defaultWASMTimeConfig()),
-	}, nil
+	return &wasmTimeValidator{}, nil
 }
 
 func (w *wasmTimeValidator) Validate(code []byte) error {
-	return wasmtime.ModuleValidate(w.engine, code)
+	return wasmtime.AspectValidate(code)
 }
 
 // wasmTimeRuntime is a wrapper for WASMTime runtime
