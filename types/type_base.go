@@ -46,3 +46,7 @@ type AspectRuntime interface {
 	Context() context.Context
 	Logger() Logger
 }
+
+type Validator interface {
+	Validate([]byte) error
+}

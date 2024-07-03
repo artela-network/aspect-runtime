@@ -2,9 +2,9 @@ package runtime
 
 import (
 	"context"
-	"github.com/artela-network/aspect-runtime/instrument"
 	"github.com/artela-network/aspect-runtime/types"
 	"github.com/artela-network/aspect-runtime/wasmtime"
+	wasm "github.com/bytecodealliance/wasmtime-go/v20"
 	"github.com/pkg/errors"
 	"time"
 )
@@ -32,7 +32,7 @@ func NewAspectRuntime(ctx context.Context, logger types.Logger, runtimeType Runt
 	}
 
 	startTime := time.Now()
-	injectedCode, err := instrument.WasmInstrument(code)
+	injectedCode, err := wasm.Instrument(code)
 	if err != nil {
 		return nil, err
 	}
