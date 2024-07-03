@@ -17,6 +17,17 @@ const (
 	MaxMemorySize = 32 * 1024 * 1024
 )
 
+type wasmTimeValidator struct {
+}
+
+func NewWASMTimeValidator(ctx context.Context, logger types.Logger) (types.Validator, error) {
+	return &wasmTimeValidator{}, nil
+}
+
+func (w *wasmTimeValidator) Validate(code []byte) error {
+	return wasmtime.AspectValidate(code)
+}
+
 // wasmTimeRuntime is a wrapper for WASMTime runtime
 type wasmTimeRuntime struct {
 	sync.Mutex

@@ -1,6 +1,7 @@
 package instrument
 
 import (
+	"github.com/bytecodealliance/wasmtime-go/v20"
 	"os"
 	"testing"
 )
@@ -12,7 +13,7 @@ func BenchmarkInstrument(b *testing.B) {
 	}
 
 	for i := 0; i < b.N; i++ {
-		_, err = WasmInstrument(byteCode)
+		_, err = wasmtime.Instrument(byteCode)
 		if err != nil {
 			b.Fatal(err)
 		}
