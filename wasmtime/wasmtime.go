@@ -282,7 +282,9 @@ func (w *wasmTimeRuntime) Destroy() {
 
 	// Deallocate resources associated with the instance, linker, and store.
 	// These components will be reconstructed before the next invocation.
+	w.linker.Close()
 	w.linker = nil
+
 	w.ctx.Reset()
 	w.ctx = nil
 }
