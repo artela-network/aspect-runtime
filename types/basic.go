@@ -35,7 +35,7 @@ func (t *TypeHeader) Marshal(dataType TypeIndex, dataLen int32) []byte {
 	return data[:]
 }
 
-// Unmarshal desialize the data to the type
+// Unmarshal deserialize the data to the type
 func (t *TypeHeader) Unmarshal(data []byte) (dataType TypeIndex, dataLen int32, err error) {
 	if len(data) < HeaderLen {
 		return 0, 0, errors.New("data is not valid, read header failed")
@@ -73,7 +73,7 @@ func (t *ByteArray) Marshal(value interface{}) []byte {
 	return data
 }
 
-// Unmarshal desialize the data to the type
+// Unmarshal deserialize the data to the type
 func (t *ByteArray) Unmarshal(data []byte) (interface{}, error) {
 	header := TypeHeader{}
 	_, dataLen, err := header.Unmarshal(data)
@@ -111,7 +111,7 @@ func (t *String) Marshal(value interface{}) []byte {
 	return data
 }
 
-// Unmarshal desialize the data to the type
+// Unmarshal deserialize the data to the type
 func (t *String) Unmarshal(data []byte) (interface{}, error) {
 	header := TypeHeader{}
 	_, dataLen, err := header.Unmarshal(data)
@@ -152,7 +152,7 @@ func (t *Bool) Marshal(value interface{}) []byte {
 	return data
 }
 
-// Unmarshal desialize the data to the type
+// Unmarshal deserialize the data to the type
 func (t *Bool) Unmarshal(data []byte) (interface{}, error) {
 	header := TypeHeader{}
 	_, dataLen, err := header.Unmarshal(data)
@@ -190,7 +190,7 @@ func (t *Int32) Marshal(value interface{}) []byte {
 	return data
 }
 
-// Unmarshal desialize the data to the type
+// Unmarshal deserialize the data to the type
 func (t *Int32) Unmarshal(data []byte) (interface{}, error) {
 	header := TypeHeader{}
 	_, dataLen, err := header.Unmarshal(data)
@@ -229,7 +229,7 @@ func (t *Int64) Marshal(value interface{}) []byte {
 	return data
 }
 
-// Unmarshal desialize the data to the type
+// Unmarshal deserialize the data to the type
 func (t *Int64) Unmarshal(data []byte) (interface{}, error) {
 	header := TypeHeader{}
 	_, dataLen, err := header.Unmarshal(data)
@@ -268,7 +268,7 @@ func (t *Uint64) Marshal(value interface{}) []byte {
 	return data
 }
 
-// Unmarshal desialize the data to the type
+// Unmarshal deserialize the data to the type
 func (t *Uint64) Unmarshal(data []byte) (interface{}, error) {
 	header := TypeHeader{}
 	_, dataLen, err := header.Unmarshal(data)
