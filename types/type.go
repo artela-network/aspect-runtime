@@ -2,8 +2,30 @@ package types
 
 import "github.com/pkg/errors"
 
+var typeNames = [12]string{
+	"Unknown",
+	"Int8",
+	"Int16",
+	"Int32",
+	"Int64",
+	"Uint8",
+	"Uint16",
+	"Uint32",
+	"Uint64",
+	"Bool",
+	"String",
+	"ByteArray",
+}
+
 // TypeIndex defines the index of runtime type
 type TypeIndex int16
+
+func (t TypeIndex) String() string {
+	if t < 0 || int(t) >= len(typeNames) {
+		return typeNames[0]
+	}
+	return typeNames[t]
+}
 
 const (
 	TypeEmpty TypeIndex = iota // wrong type, no handler for empty type
@@ -66,6 +88,7 @@ func TypeObjectMapping(index TypeIndex) (IType, error) {
 		return NewInt64(), nil
 	case TypeUint64:
 		return NewUint64(), nil
+	default:
+		return nil, errors.Errorf("type of index %d is not valid", index)
 	}
-	return nil, errors.Errorf("type of index %d is not valid", index)
 }

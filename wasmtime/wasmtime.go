@@ -46,7 +46,7 @@ type wasmTimeRuntime struct {
 func NewWASMTimeRuntime(ctx context.Context, logger types.Logger, code []byte, apis *types.HostAPIRegistry) (out types.AspectRuntime, err error) {
 	watvm := &wasmTimeRuntime{
 		engine: wasmtime.NewEngineWithConfig(defaultWASMTimeConfig()),
-		logger: logger,
+		logger: logger.With("runtime", "wasmtime"),
 	}
 
 	// init wasm module
@@ -107,9 +107,10 @@ func (w *wasmTimeRuntime) Call(method string, gas int64, args ...interface{}) (r
 	startTime := time.Now()
 
 	defer func() {
-		w.logger.Debug("aspect execution done",
+		w.logger.Info("aspect execution done",
 			"duration", time.Since(startTime).String(),
 			"remainingGas", leftover,
+			"gasUsed", gas-leftover,
 			"err", err)
 	}()
 
@@ -199,6 +200,8 @@ func (w *wasmTimeRuntime) call(method string, args ...interface{}) (interface{},
 
 		data := rtType.Marshal(arg)
 		ptr, err := w.ctx.AllocMemory(int32(len(data)))
+
+		w.logger.Debug("input data length", "index", i, "len", len(data), "type", typeIndex.String())
 		if err != nil {
 			return nil, err
 		}

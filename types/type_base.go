@@ -9,7 +9,7 @@ type IType interface {
 	// Marshal serialize the type to byte array
 	Marshal(value interface{}) []byte
 
-	// Unmarshal desialize the data to the type
+	// Unmarshal deserialize the data to the type
 	Unmarshal(data []byte) (interface{}, error)
 }
 
@@ -37,6 +37,8 @@ type Logger interface {
 	Debug(msg string, keyvals ...interface{})
 	Info(msg string, keyvals ...interface{})
 	Error(msg string, keyvals ...interface{})
+
+	With(keyvals ...interface{}) Logger
 }
 
 type AspectRuntime interface {
