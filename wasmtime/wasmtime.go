@@ -292,6 +292,22 @@ func (w *wasmTimeRuntime) Destroy() {
 
 	w.logger.Debug("destroying wasm runtime")
 
+	w.clear()
+
+	w.module.Close()
+	w.engine.Close()
+}
+
+func (w *wasmTimeRuntime) Reset() {
+	w.Lock()
+	defer w.Unlock()
+
+	w.logger.Debug("resetting wasm runtime")
+
+	w.clear()
+}
+
+func (w *wasmTimeRuntime) clear() {
 	w.apis = nil
 
 	// Deallocate resources associated with the instance, linker, and store.

@@ -186,7 +186,7 @@ func (pool *RuntimePool) Return(key string, runtime types.AspectRuntime) {
 	// free the hostapis and ctx injected to types, in case that go runtime GC failed
 	pool.logger.Debug("returning runtime", "key", key)
 
-	runtime.Destroy()
+	runtime.Reset()
 
 	pool.logger.Debug("runtime destroyed", "key", key)
 
