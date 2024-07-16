@@ -32,6 +32,12 @@ type Entry struct {
 	runtime types.AspectRuntime
 }
 
+func (e *Entry) destroy() {
+	if e.runtime != nil {
+		e.runtime.Destroy()
+	}
+}
+
 type EntryList struct {
 	sync.Mutex
 
@@ -75,6 +81,7 @@ func (list *EntryList) PushFront(entry *Entry) {
 	if list.len >= list.cap {
 		end := list.tail.prev
 		list.remove(end)
+		go end.destroy()
 	}
 
 	list.len++
@@ -109,7 +116,7 @@ func (list *EntryList) remove(entry *Entry) {
 	entry.snext.sprev = entry.sprev
 	key := entry.key
 	_, hash := split(key)
-	sub, _ := list.subs[hash]
+	sub := list.subs[hash]
 	sub.len--
 	if sub.len == 0 {
 		delete(list.subs, hash)

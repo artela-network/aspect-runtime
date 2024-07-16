@@ -65,7 +65,9 @@ func (c *Context) ReadMemory(ptr int32, size int32) ([]byte, error) {
 func (c *Context) Reset() {
 	c.Instance = nil
 
-	c.Store.Close()
+	if c.Store != nil {
+		c.Store.Close()
+	}
 	c.Store = nil
 
 	c.gasCounterGlobal = nil

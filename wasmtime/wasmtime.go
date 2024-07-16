@@ -294,8 +294,12 @@ func (w *wasmTimeRuntime) Destroy() {
 
 	w.clear()
 
-	w.module.Close()
-	w.engine.Close()
+	if w.module != nil {
+		w.module.Close()
+	}
+	if w.engine != nil {
+		w.engine.Close()
+	}
 }
 
 func (w *wasmTimeRuntime) Reset() {
@@ -312,10 +316,14 @@ func (w *wasmTimeRuntime) clear() {
 
 	// Deallocate resources associated with the instance, linker, and store.
 	// These components will be reconstructed before the next invocation.
-	w.linker.Close()
+	if w.linker != nil {
+		w.linker.Close()
+	}
 	w.linker = nil
 
-	w.ctx.Reset()
+	if w.ctx != nil {
+		w.ctx.Reset()
+	}
 	w.ctx = nil
 }
 
