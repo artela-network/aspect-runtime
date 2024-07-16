@@ -2,11 +2,13 @@ package runtime
 
 import (
 	"context"
+	"time"
+
+	"github.com/pkg/errors"
+
 	"github.com/artela-network/aspect-runtime/types"
 	"github.com/artela-network/aspect-runtime/wasmtime"
 	wasm "github.com/bytecodealliance/wasmtime-go/v20"
-	"github.com/pkg/errors"
-	"time"
 )
 
 type (

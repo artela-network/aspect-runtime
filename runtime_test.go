@@ -3,14 +3,14 @@ package runtime
 import (
 	"context"
 	"fmt"
-	"github.com/artela-network/aspect-runtime/types"
-	"github.com/artela-network/aspect-runtime/wasmtime"
-	"github.com/ethereum/go-ethereum/common/math"
-	"github.com/ethereum/go-ethereum/log"
 	"os"
 	"path"
 	"reflect"
 	"testing"
+
+	"github.com/artela-network/aspect-runtime/types"
+	"github.com/artela-network/aspect-runtime/wasmtime"
+	"github.com/ethereum/go-ethereum/common/math"
 
 	"github.com/pkg/errors"
 
@@ -30,6 +30,24 @@ func (m *mockedHostContext) SetGas(gas uint64) {
 }
 
 func (m *mockedHostContext) SetVMContext(_ types.VMContext) {
+}
+
+type mockedLogger struct{}
+
+func (m *mockedLogger) Debug(msg string, keyvals ...interface{}) {
+	fmt.Println("DEBUG", msg, keyvals)
+}
+
+func (m *mockedLogger) Info(msg string, keyvals ...interface{}) {
+	fmt.Println("INFO", msg, keyvals)
+}
+
+func (m *mockedLogger) Error(msg string, keyvals ...interface{}) {
+	fmt.Println("ERROR", msg, keyvals)
+}
+
+func (m *mockedLogger) With(keyvals ...interface{}) types.Logger {
+	return m
 }
 
 // Helper: init hostAPI collection(@see type script impl :: declare)
@@ -110,7 +128,7 @@ func TestCallEmptyStr(t *testing.T) {
 		return
 	}
 
-	wasmTimeRuntime, err = NewAspectRuntime(context.Background(), log.New(), WASM, raw, hostApis)
+	wasmTimeRuntime, err = NewAspectRuntime(context.Background(), &mockedLogger{}, WASM, raw, hostApis)
 	require.Equal(t, nil, err)
 
 	{
@@ -133,7 +151,7 @@ func TestInfiniteLoop(t *testing.T) {
 		return
 	}
 
-	wasmTimeRuntime, err := NewAspectRuntime(context.Background(), log.New(), WASM, raw, hostApis)
+	wasmTimeRuntime, err := NewAspectRuntime(context.Background(), &mockedLogger{}, WASM, raw, hostApis)
 	require.Equal(t, nil, err)
 
 	_, leftover, err := wasmTimeRuntime.Call("infiniteLoop", math.MaxInt64)
@@ -153,7 +171,7 @@ func TestFib(t *testing.T) {
 		return
 	}
 
-	wasmTimeRuntime, err := NewAspectRuntime(context.Background(), log.New(), WASM, raw, hostApis)
+	wasmTimeRuntime, err := NewAspectRuntime(context.Background(), &mockedLogger{}, WASM, raw, hostApis)
 	require.Equal(t, nil, err)
 
 	_, leftover, err := wasmTimeRuntime.Call("fib", math.MaxInt64, uint64(math.MaxInt32), uint64(math.MaxInt32))
@@ -180,7 +198,7 @@ func TestCallNormal(t *testing.T) {
 		return
 	}
 
-	wasmTimeRuntime, err = NewAspectRuntime(context.Background(), log.New(), WASM, raw, hostApis)
+	wasmTimeRuntime, err = NewAspectRuntime(context.Background(), &mockedLogger{}, WASM, raw, hostApis)
 	require.Equal(t, nil, err)
 
 	{
@@ -214,7 +232,7 @@ func TestCallMultiArgs(t *testing.T) {
 		return
 	}
 
-	wasmTimeRuntime, err = NewAspectRuntime(context.Background(), log.New(), WASM, raw, hostApis)
+	wasmTimeRuntime, err = NewAspectRuntime(context.Background(), &mockedLogger{}, WASM, raw, hostApis)
 	require.Equal(t, nil, err)
 
 	{
@@ -245,7 +263,7 @@ func TestBytesNormal(t *testing.T) {
 		err             error
 	)
 
-	wasmTimeRuntime, err = NewAspectRuntime(context.Background(), log.New(), WASM, raw, hostApis)
+	wasmTimeRuntime, err = NewAspectRuntime(context.Background(), &mockedLogger{}, WASM, raw, hostApis)
 	require.Equal(t, nil, err)
 	res, leftover, err := wasmTimeRuntime.Call("testBytes", math.MaxInt64, arg)
 	fmt.Println(leftover)
@@ -273,7 +291,7 @@ func TestCallHostApiNoReturn(t *testing.T) {
 		err             error
 	)
 
-	wasmTimeRuntime, err = NewAspectRuntime(context.Background(), log.New(), WASM, raw, hostApis)
+	wasmTimeRuntime, err = NewAspectRuntime(context.Background(), &mockedLogger{}, WASM, raw, hostApis)
 	require.Equal(t, nil, err)
 	res, leftover, err := wasmTimeRuntime.Call("greet3", math.MaxInt64, arg)
 	fmt.Println(leftover)
@@ -302,7 +320,7 @@ func TestBytesNil(t *testing.T) {
 		err             error
 	)
 
-	wasmTimeRuntime, err = NewAspectRuntime(context.Background(), log.New(), WASM, raw, hostApis)
+	wasmTimeRuntime, err = NewAspectRuntime(context.Background(), &mockedLogger{}, WASM, raw, hostApis)
 	require.Equal(t, nil, err)
 	res, leftover, err := wasmTimeRuntime.Call("testBytes", math.MaxInt64, arg)
 	fmt.Println(leftover)
@@ -333,7 +351,7 @@ func TestLongString(t *testing.T) {
 		return
 	}
 
-	wasmTimeRuntime, err = NewAspectRuntime(context.Background(), log.New(), WASM, raw, hostApis)
+	wasmTimeRuntime, err = NewAspectRuntime(context.Background(), &mockedLogger{}, WASM, raw, hostApis)
 	require.Equal(t, nil, err)
 
 	{
