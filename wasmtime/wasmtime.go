@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"runtime/debug"
+	"strings"
 	"sync"
 	"time"
 
@@ -18,14 +19,31 @@ const (
 )
 
 type wasmTimeValidator struct {
+	logger types.Logger
 }
 
 func NewWASMTimeValidator(ctx context.Context, logger types.Logger) (types.Validator, error) {
-	return &wasmTimeValidator{}, nil
+	return &wasmTimeValidator{
+		logger,
+	}, nil
 }
 
 func (w *wasmTimeValidator) Validate(code []byte) error {
-	return wasmtime.AspectValidate(code)
+	err := wasmtime.AspectValidate(code)
+	if err != nil {
+		w.logger.Error("wasm validation failed", "err", err)
+
+		// trim the stack trace
+		msg := err.Error()
+		splits := strings.Split(msg, "\n")
+		if len(splits) <= 1 {
+			return err
+		}
+
+		return errors.New(splits[0])
+	}
+
+	return nil
 }
 
 // wasmTimeRuntime is a wrapper for WASMTime runtime
