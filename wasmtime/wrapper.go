@@ -1,7 +1,6 @@
 package wasmtime
 
 import (
-	"fmt"
 	"reflect"
 	"time"
 
@@ -183,14 +182,16 @@ func executeWrapper(vmCtx types.VMContext, hostCtx types.HostContext, gasRule ty
 		}
 	}
 	if err != nil {
-		return nil, wasmtime.NewTrap(fmt.Sprintf("read params failed"))
+		vmCtx.Logger().Error("read params failed", "err", err)
+		return nil, wasmtime.NewTrap("read params failed")
 	}
 	v := reflect.ValueOf(fn)
 
 	// need to sync the gas in vm to host
 	remaining, err := vmCtx.RemainingWASMGas()
 	if err != nil {
-		return nil, wasmtime.NewTrap(fmt.Sprintf("read gas failed, %v", err))
+		vmCtx.Logger().Error("failed to load gas counter", "err", err)
+		return nil, wasmtime.NewTrap("failed to load gas counter")
 	}
 
 	// NOTE: during the host call, the gas consumed is in EVM metric, so it will be 1000x than WASM metric,
@@ -204,16 +205,19 @@ func executeWrapper(vmCtx types.VMContext, hostCtx types.HostContext, gasRule ty
 	// after the host call we need to sync the gas in host back to vm
 	remaining = int64(hostCtx.RemainingGas())
 	if err := vmCtx.SetWASMGas(remaining*types.EVMGasToWASMGasMultiplier + remainderGas); err != nil {
-		return nil, nil
+		vmCtx.Logger().Error("failed to sync gas counter back", "err", err)
+		return nil, wasmtime.NewTrap("failed to update vm gas")
 	}
 
 	outPtrs, err := paramListWrite(vmCtx, res)
 	if err != nil && err.Error() == types.OutOfGasError.Error() {
+		vmCtx.Logger().Error("host api execution fail", "err", err)
 		return nil, wasmtime.NewTrap(types.OutOfGasError.Error())
 	}
 
 	if err != nil {
-		return nil, wasmtime.NewTrap(fmt.Sprintf("write params failed, %v", err))
+		vmCtx.Logger().Error("write params failed", "err", err)
+		return nil, wasmtime.NewTrap("write params failed")
 	}
 	return outPtrs, nil
 }

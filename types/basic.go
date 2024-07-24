@@ -66,7 +66,7 @@ func (t *ByteArray) Marshal(value interface{}) []byte {
 	data := make([]byte, t.dataLen+HeaderLen)
 	header := &TypeHeader{}
 	headerData := header.Marshal(t.dataType, t.dataLen)
-	copy(data[:], headerData)
+	copy(data, headerData)
 
 	copy(data[HeaderLen:], input)
 
@@ -104,7 +104,7 @@ func (t *String) Marshal(value interface{}) []byte {
 	data := make([]byte, t.dataLen+HeaderLen)
 	header := &TypeHeader{}
 	headerData := header.Marshal(t.dataType, t.dataLen)
-	copy(data[:], headerData)
+	copy(data, headerData)
 
 	copy(data[HeaderLen:], []byte(input))
 
@@ -141,7 +141,7 @@ func (t *Bool) Marshal(value interface{}) []byte {
 	data := make([]byte, t.dataLen+HeaderLen)
 	header := &TypeHeader{}
 	headerData := header.Marshal(t.dataType, t.dataLen)
-	copy(data[:], headerData)
+	copy(data, headerData)
 
 	body := byte(0)
 	if input {
@@ -182,7 +182,7 @@ func (t *Int32) Marshal(value interface{}) []byte {
 	data := make([]byte, t.dataLen+HeaderLen)
 	header := &TypeHeader{}
 	headerData := header.Marshal(t.dataType, t.dataLen)
-	copy(data[:], headerData)
+	copy(data, headerData)
 
 	body := int32ToBytes(input)
 	copy(data[HeaderLen:], body)
@@ -221,7 +221,7 @@ func (t *Int64) Marshal(value interface{}) []byte {
 	data := make([]byte, t.dataLen+HeaderLen)
 	header := &TypeHeader{}
 	headerData := header.Marshal(t.dataType, t.dataLen)
-	copy(data[:], headerData)
+	copy(data, headerData)
 
 	body := int64ToBytes(input)
 	copy(data[HeaderLen:], body)
@@ -260,7 +260,7 @@ func (t *Uint64) Marshal(value interface{}) []byte {
 	data := make([]byte, t.dataLen+HeaderLen)
 	header := &TypeHeader{}
 	headerData := header.Marshal(t.dataType, t.dataLen)
-	copy(data[:], headerData)
+	copy(data, headerData)
 
 	body := int64ToBytes(int64(input))
 	copy(data[HeaderLen:], body)

@@ -2,12 +2,10 @@ package runtime
 
 import (
 	"context"
-	"crypto"
 	"crypto/sha1"
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -214,15 +212,6 @@ func hashOfRuntimeArgs(runtimeType RuntimeType, code []byte) Hash {
 	h.Write(rttype[:])
 	h.Write(code)
 	return Hash(hex.EncodeToString(h.Sum(nil)))
-}
-
-func hashOf(objs ...interface{}) []byte {
-	sha := crypto.SHA256.New()
-	for _, obj := range objs {
-		fmt.Fprint(sha, reflect.TypeOf(obj))
-		fmt.Fprint(sha, obj)
-	}
-	return sha.Sum(nil)
 }
 
 func join(id string, hash Hash) string {

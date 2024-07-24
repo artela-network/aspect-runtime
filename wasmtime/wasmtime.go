@@ -22,7 +22,7 @@ type wasmTimeValidator struct {
 	logger types.Logger
 }
 
-func NewWASMTimeValidator(ctx context.Context, logger types.Logger) (types.Validator, error) {
+func NewWASMTimeValidator(_ context.Context, logger types.Logger) (types.Validator, error) {
 	return &wasmTimeValidator{
 		logger,
 	}, nil
