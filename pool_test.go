@@ -53,7 +53,6 @@ func TestCallNormalWithPool2(t *testing.T) {
 
 	for i := 0; i < 12; i++ {
 		hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
-		// nolint
 		err := addApis(t, hostApis)
 		if err != nil {
 			return

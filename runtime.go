@@ -14,7 +14,6 @@ import (
 type (
 	engine func(ctx context.Context, logger types.Logger, code []byte, apis *types.HostAPIRegistry) (out types.AspectRuntime, err error)
 
-	// nolint
 	RuntimeType int
 )
 

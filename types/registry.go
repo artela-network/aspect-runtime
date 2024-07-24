@@ -20,7 +20,6 @@ type HostAPIRegistry struct {
 
 	hostFuncWrapper HostFuncWrapper
 
-	// nolint
 	ctx VMContext
 
 	hostCtx HostContext
