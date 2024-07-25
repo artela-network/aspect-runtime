@@ -5,6 +5,6 @@ import (
 )
 
 const (
-	EVMGasToWASMGasMultiplier = 100
+	EVMGasToWASMGasMultiplier = 1000
 	MaxGas                    = math.MaxInt64 / EVMGasToWASMGasMultiplier
 )

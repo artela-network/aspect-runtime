@@ -3,9 +3,6 @@ package runtime
 import (
 	"context"
 	"fmt"
-	"github.com/artela-network/aspect-runtime/types"
-	"github.com/artela-network/aspect-runtime/wasmtime"
-	"github.com/ethereum/go-ethereum/log"
 	"os"
 	"path"
 	"runtime"
@@ -13,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artela-network/aspect-runtime/types"
+	"github.com/artela-network/aspect-runtime/wasmtime"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,13 +21,13 @@ func TestCallNormalWithPool(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
-	hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
+	hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
 	err := addApis(t, hostApis)
 	if err != nil {
 		return
 	}
 
-	pool := NewRuntimePool(context.Background(), log.New(), 10)
+	pool := NewRuntimePool(context.Background(), &mockedLogger{}, 10)
 
 	for i := 0; i < 12; i++ {
 		key, wasmTimeRuntime, err := pool.Runtime(context.Background(), WASM, raw, hostApis)
@@ -50,11 +49,10 @@ func TestCallNormalWithPool2(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
-	pool := NewRuntimePool(context.Background(), log.New(), 10)
+	pool := NewRuntimePool(context.Background(), &mockedLogger{}, 10)
 
 	for i := 0; i < 12; i++ {
-		hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
-		// nolint
+		hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
 		err := addApis(t, hostApis)
 		if err != nil {
 			return
@@ -78,13 +76,13 @@ func TestPoolPerformance(t *testing.T) {
 	// call without pool
 	t1 := time.Now()
 	for i := 0; i < 100; i++ {
-		hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
+		hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
 		err := addApis(t, hostApis)
 		if err != nil {
 			return
 		}
 
-		wasmTimeRuntime, err := NewAspectRuntime(context.Background(), log.New(), WASM, raw, hostApis)
+		wasmTimeRuntime, err := NewAspectRuntime(context.Background(), &mockedLogger{}, WASM, raw, hostApis)
 		require.Equal(t, nil, err)
 		res, _, err := wasmTimeRuntime.Call("testIncrease", types.MaxGas)
 		require.Equal(t, nil, err)
@@ -93,14 +91,14 @@ func TestPoolPerformance(t *testing.T) {
 		wasmTimeRuntime.Destroy()
 		wasmTimeRuntime = nil
 	}
-	cost1 := time.Now().Sub(t1).Microseconds()
+	cost1 := time.Since(t1).Microseconds()
 	fmt.Printf("total cost without pool: %dμs\n", cost1)
 
 	// call with pool
-	pool := NewRuntimePool(context.Background(), log.New(), 10)
+	pool := NewRuntimePool(context.Background(), &mockedLogger{}, 10)
 	t2 := time.Now()
 	for i := 0; i < 100; i++ {
-		hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
+		hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
 		err := addApis(t, hostApis)
 		if err != nil {
 			return
@@ -117,7 +115,7 @@ func TestPoolPerformance(t *testing.T) {
 
 		require.Equal(t, 1, pool.Len())
 	}
-	cost2 := time.Now().Sub(t2).Microseconds()
+	cost2 := time.Since(t2).Microseconds()
 	fmt.Printf("total cost with pool: %dμs\n", cost2)
 	fmt.Printf("cost with pool / cost without pool: %.2f%%\n", float32(cost2)/float32(cost1)*100) // it is 0.2606396 in one test
 }
@@ -142,13 +140,13 @@ func TestPoolParallelPerformance(t *testing.T) {
 			// 	time.Sleep(time.Duration(poolsize) * time.Millisecond)
 			// }
 			go func() {
-				hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
+				hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
 				err := addApis(t, hostApis)
 				if err != nil {
 					return
 				}
 
-				wasmTimeRuntime, err := NewAspectRuntime(context.Background(), log.New(), WASM, raw, hostApis)
+				wasmTimeRuntime, err := NewAspectRuntime(context.Background(), &mockedLogger{}, WASM, raw, hostApis)
 				require.Equal(t, nil, err)
 				res, _, err := wasmTimeRuntime.Call("greet", types.MaxGas, "abc")
 				require.Equal(t, nil, err)
@@ -162,13 +160,13 @@ func TestPoolParallelPerformance(t *testing.T) {
 		}
 		wg1.Wait()
 		// fmt.Println("total used: ", poolUsed)
-		cost1 := time.Now().Sub(t1).Milliseconds()
+		cost1 := time.Since(t1).Milliseconds()
 		fmt.Printf("cost without pool: %dms\n", cost1)
 		time.Sleep(1 * time.Second)
 		totalCost1 += int(cost1)
 
 		// call with pool
-		pool := NewRuntimePool(context.Background(), log.New(), poolsize)
+		pool := NewRuntimePool(context.Background(), &mockedLogger{}, poolsize)
 		t2 := time.Now()
 		var wg2 sync.WaitGroup
 		for i := 1; i < times; i++ {
@@ -178,7 +176,7 @@ func TestPoolParallelPerformance(t *testing.T) {
 			// 	time.Sleep(time.Duration(poolsize) * time.Millisecond)
 			// }
 			go func() {
-				hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
+				hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
 				err := addApis(t, hostApis)
 				if err != nil {
 					return
@@ -198,7 +196,7 @@ func TestPoolParallelPerformance(t *testing.T) {
 		}
 		wg2.Wait()
 		// fmt.Println("total used: ", poolUsed)
-		cost2 := time.Now().Sub(t2).Milliseconds()
+		cost2 := time.Since(t2).Milliseconds()
 		fmt.Printf("total cost with pool: %dms\n", cost2)
 		totalCost2 += int(cost2)
 		runtime.GC()

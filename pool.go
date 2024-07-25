@@ -2,12 +2,10 @@ package runtime
 
 import (
 	"context"
-	"crypto"
 	"crypto/sha1"
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -30,6 +28,12 @@ type Entry struct {
 
 	key     Key // build with id:hash
 	runtime types.AspectRuntime
+}
+
+func (e *Entry) destroy() {
+	if e.runtime != nil {
+		e.runtime.Destroy()
+	}
 }
 
 type EntryList struct {
@@ -75,6 +79,7 @@ func (list *EntryList) PushFront(entry *Entry) {
 	if list.len >= list.cap {
 		end := list.tail.prev
 		list.remove(end)
+		go end.destroy()
 	}
 
 	list.len++
@@ -109,7 +114,7 @@ func (list *EntryList) remove(entry *Entry) {
 	entry.snext.sprev = entry.sprev
 	key := entry.key
 	_, hash := split(key)
-	sub, _ := list.subs[hash]
+	sub := list.subs[hash]
 	sub.len--
 	if sub.len == 0 {
 		delete(list.subs, hash)
@@ -186,7 +191,7 @@ func (pool *RuntimePool) Return(key string, runtime types.AspectRuntime) {
 	// free the hostapis and ctx injected to types, in case that go runtime GC failed
 	pool.logger.Debug("returning runtime", "key", key)
 
-	runtime.Destroy()
+	runtime.Reset()
 
 	pool.logger.Debug("runtime destroyed", "key", key)
 
@@ -207,15 +212,6 @@ func hashOfRuntimeArgs(runtimeType RuntimeType, code []byte) Hash {
 	h.Write(rttype[:])
 	h.Write(code)
 	return Hash(hex.EncodeToString(h.Sum(nil)))
-}
-
-func hashOf(objs ...interface{}) []byte {
-	sha := crypto.SHA256.New()
-	for _, obj := range objs {
-		fmt.Fprint(sha, reflect.TypeOf(obj))
-		fmt.Fprint(sha, obj)
-	}
-	return sha.Sum(nil)
 }
 
 func join(id string, hash Hash) string {

@@ -9,13 +9,14 @@ type IType interface {
 	// Marshal serialize the type to byte array
 	Marshal(value interface{}) []byte
 
-	// Unmarshal desialize the data to the type
+	// Unmarshal deserialize the data to the type
 	Unmarshal(data []byte) (interface{}, error)
 }
 
 type HostContext interface {
 	RemainingGas() uint64
 	SetGas(gas uint64)
+	SetVMContext(vmContext VMContext)
 }
 
 type VMContext interface {
@@ -36,12 +37,19 @@ type Logger interface {
 	Debug(msg string, keyvals ...interface{})
 	Info(msg string, keyvals ...interface{})
 	Error(msg string, keyvals ...interface{})
+
+	With(keyvals ...interface{}) Logger
 }
 
 type AspectRuntime interface {
 	Call(method string, gas int64, args ...interface{}) (interface{}, int64, error)
 	Destroy()
+	Reset()
 	ResetStore(ctx context.Context, apis *HostAPIRegistry) error
 	Context() context.Context
 	Logger() Logger
+}
+
+type Validator interface {
+	Validate([]byte) error
 }

@@ -20,14 +20,16 @@ type HostAPIRegistry struct {
 
 	hostFuncWrapper HostFuncWrapper
 
-	// nolint
 	ctx VMContext
+
+	hostCtx HostContext
 }
 
-func NewHostAPIRegistry(hostFuncWrapper HostFuncWrapper) *HostAPIRegistry {
+func NewHostAPIRegistry(ctx HostContext, hostFuncWrapper HostFuncWrapper) *HostAPIRegistry {
 	return &HostAPIRegistry{
 		wrapperFuncs:    make(map[Module]map[NameSpace]map[MethodName]interface{}),
 		hostFuncWrapper: hostFuncWrapper,
+		hostCtx:         ctx,
 	}
 }
 
@@ -59,6 +61,7 @@ func (h *HostAPIRegistry) WrapperFuncs() map[Module]map[NameSpace]map[MethodName
 
 func (h *HostAPIRegistry) SetContext(ctx VMContext) {
 	h.ctx = ctx
+	h.hostCtx.SetVMContext(ctx)
 }
 
 func (h *HostAPIRegistry) Destroy() {

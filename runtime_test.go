@@ -3,14 +3,14 @@ package runtime
 import (
 	"context"
 	"fmt"
-	"github.com/artela-network/aspect-runtime/types"
-	"github.com/artela-network/aspect-runtime/wasmtime"
-	"github.com/ethereum/go-ethereum/common/math"
-	"github.com/ethereum/go-ethereum/log"
 	"os"
 	"path"
 	"reflect"
 	"testing"
+
+	"github.com/artela-network/aspect-runtime/types"
+	"github.com/artela-network/aspect-runtime/wasmtime"
+	"github.com/ethereum/go-ethereum/common/math"
 
 	"github.com/pkg/errors"
 
@@ -27,6 +27,27 @@ func (m *mockedHostContext) RemainingGas() uint64 {
 
 func (m *mockedHostContext) SetGas(gas uint64) {
 	m.gas = gas
+}
+
+func (m *mockedHostContext) SetVMContext(_ types.VMContext) {
+}
+
+type mockedLogger struct{}
+
+func (m *mockedLogger) Debug(msg string, keyvals ...interface{}) {
+	fmt.Println("DEBUG", msg, keyvals)
+}
+
+func (m *mockedLogger) Info(msg string, keyvals ...interface{}) {
+	fmt.Println("INFO", msg, keyvals)
+}
+
+func (m *mockedLogger) Error(msg string, keyvals ...interface{}) {
+	fmt.Println("ERROR", msg, keyvals)
+}
+
+func (m *mockedLogger) With(keyvals ...interface{}) types.Logger {
+	return m
 }
 
 // Helper: init hostAPI collection(@see type script impl :: declare)
@@ -77,7 +98,7 @@ func addApis(t *testing.T, hostApis *types.HostAPIRegistry) error {
 }
 
 func TestAddApi(t *testing.T) {
-	hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
+	hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
 	err := hostApis.AddAPI("index", "test", "hello4", &types.HostFuncWithGasRule{
 		Func: func(arg string) (string, error) {
 			return "", errors.New("error")
@@ -95,7 +116,7 @@ func TestCallEmptyStr(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
-	hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
+	hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
 
 	var (
 		arg             string = ""
@@ -107,7 +128,7 @@ func TestCallEmptyStr(t *testing.T) {
 		return
 	}
 
-	wasmTimeRuntime, err = NewAspectRuntime(context.Background(), log.New(), WASM, raw, hostApis)
+	wasmTimeRuntime, err = NewAspectRuntime(context.Background(), &mockedLogger{}, WASM, raw, hostApis)
 	require.Equal(t, nil, err)
 
 	{
@@ -123,14 +144,14 @@ func TestInfiniteLoop(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
-	hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
+	hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
 
 	err := addApis(t, hostApis)
 	if err != nil {
 		return
 	}
 
-	wasmTimeRuntime, err := NewAspectRuntime(context.Background(), log.New(), WASM, raw, hostApis)
+	wasmTimeRuntime, err := NewAspectRuntime(context.Background(), &mockedLogger{}, WASM, raw, hostApis)
 	require.Equal(t, nil, err)
 
 	_, leftover, err := wasmTimeRuntime.Call("infiniteLoop", math.MaxInt64)
@@ -143,14 +164,14 @@ func TestInfiniteLoop(t *testing.T) {
 func TestFib(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
-	hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
+	hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
 
 	err := addApis(t, hostApis)
 	if err != nil {
 		return
 	}
 
-	wasmTimeRuntime, err := NewAspectRuntime(context.Background(), log.New(), WASM, raw, hostApis)
+	wasmTimeRuntime, err := NewAspectRuntime(context.Background(), &mockedLogger{}, WASM, raw, hostApis)
 	require.Equal(t, nil, err)
 
 	_, leftover, err := wasmTimeRuntime.Call("fib", math.MaxInt64, uint64(math.MaxInt32), uint64(math.MaxInt32))
@@ -165,7 +186,7 @@ func TestCallNormal(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
-	hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
+	hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
 
 	var (
 		arg             string = "abcd"
@@ -177,7 +198,7 @@ func TestCallNormal(t *testing.T) {
 		return
 	}
 
-	wasmTimeRuntime, err = NewAspectRuntime(context.Background(), log.New(), WASM, raw, hostApis)
+	wasmTimeRuntime, err = NewAspectRuntime(context.Background(), &mockedLogger{}, WASM, raw, hostApis)
 	require.Equal(t, nil, err)
 
 	{
@@ -196,7 +217,7 @@ func TestCallMultiArgs(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
-	hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
+	hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
 
 	var (
 		arg1            string = "bonjour"
@@ -211,7 +232,7 @@ func TestCallMultiArgs(t *testing.T) {
 		return
 	}
 
-	wasmTimeRuntime, err = NewAspectRuntime(context.Background(), log.New(), WASM, raw, hostApis)
+	wasmTimeRuntime, err = NewAspectRuntime(context.Background(), &mockedLogger{}, WASM, raw, hostApis)
 	require.Equal(t, nil, err)
 
 	{
@@ -229,7 +250,7 @@ func TestBytesNormal(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
-	hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
+	hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
 
 	testErr := addApis(t, hostApis)
 	if testErr != nil {
@@ -242,7 +263,7 @@ func TestBytesNormal(t *testing.T) {
 		err             error
 	)
 
-	wasmTimeRuntime, err = NewAspectRuntime(context.Background(), log.New(), WASM, raw, hostApis)
+	wasmTimeRuntime, err = NewAspectRuntime(context.Background(), &mockedLogger{}, WASM, raw, hostApis)
 	require.Equal(t, nil, err)
 	res, leftover, err := wasmTimeRuntime.Call("testBytes", math.MaxInt64, arg)
 	fmt.Println(leftover)
@@ -257,7 +278,7 @@ func TestCallHostApiNoReturn(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
-	hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
+	hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
 
 	errapi := addApis(t, hostApis)
 	if errapi != nil {
@@ -270,7 +291,7 @@ func TestCallHostApiNoReturn(t *testing.T) {
 		err             error
 	)
 
-	wasmTimeRuntime, err = NewAspectRuntime(context.Background(), log.New(), WASM, raw, hostApis)
+	wasmTimeRuntime, err = NewAspectRuntime(context.Background(), &mockedLogger{}, WASM, raw, hostApis)
 	require.Equal(t, nil, err)
 	res, leftover, err := wasmTimeRuntime.Call("greet3", math.MaxInt64, arg)
 	fmt.Println(leftover)
@@ -286,7 +307,7 @@ func TestBytesNil(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
-	hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
+	hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
 
 	addErr := addApis(t, hostApis)
 	if addErr != nil {
@@ -299,7 +320,7 @@ func TestBytesNil(t *testing.T) {
 		err             error
 	)
 
-	wasmTimeRuntime, err = NewAspectRuntime(context.Background(), log.New(), WASM, raw, hostApis)
+	wasmTimeRuntime, err = NewAspectRuntime(context.Background(), &mockedLogger{}, WASM, raw, hostApis)
 	require.Equal(t, nil, err)
 	res, leftover, err := wasmTimeRuntime.Call("testBytes", math.MaxInt64, arg)
 	fmt.Println(leftover)
@@ -315,7 +336,7 @@ func TestLongString(t *testing.T) {
 	cwd, _ := os.Getwd()
 	raw, _ := os.ReadFile(path.Join(cwd, "./wasmtime/testdata/runtime_test.wasm"))
 
-	hostApis := types.NewHostAPIRegistry(wasmtime.Wrap)
+	hostApis := types.NewHostAPIRegistry(&mockedHostContext{}, wasmtime.Wrap)
 
 	var (
 		arg             string = ""
@@ -330,7 +351,7 @@ func TestLongString(t *testing.T) {
 		return
 	}
 
-	wasmTimeRuntime, err = NewAspectRuntime(context.Background(), log.New(), WASM, raw, hostApis)
+	wasmTimeRuntime, err = NewAspectRuntime(context.Background(), &mockedLogger{}, WASM, raw, hostApis)
 	require.Equal(t, nil, err)
 
 	{

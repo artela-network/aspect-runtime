@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"runtime/debug"
+	"strings"
 	"sync"
 	"time"
 
@@ -16,6 +17,34 @@ import (
 const (
 	MaxMemorySize = 32 * 1024 * 1024
 )
+
+type wasmTimeValidator struct {
+	logger types.Logger
+}
+
+func NewWASMTimeValidator(_ context.Context, logger types.Logger) (types.Validator, error) {
+	return &wasmTimeValidator{
+		logger,
+	}, nil
+}
+
+func (w *wasmTimeValidator) Validate(code []byte) error {
+	err := wasmtime.AspectValidate(code)
+	if err != nil {
+		w.logger.Error("wasm validation failed", "err", err)
+
+		// trim the stack trace
+		msg := err.Error()
+		splits := strings.Split(msg, "\n")
+		if len(splits) <= 1 {
+			return err
+		}
+
+		return errors.New(splits[0])
+	}
+
+	return nil
+}
 
 // wasmTimeRuntime is a wrapper for WASMTime runtime
 type wasmTimeRuntime struct {
@@ -35,7 +64,7 @@ type wasmTimeRuntime struct {
 func NewWASMTimeRuntime(ctx context.Context, logger types.Logger, code []byte, apis *types.HostAPIRegistry) (out types.AspectRuntime, err error) {
 	watvm := &wasmTimeRuntime{
 		engine: wasmtime.NewEngineWithConfig(defaultWASMTimeConfig()),
-		logger: logger,
+		logger: logger.With("runtime", "wasmtime"),
 	}
 
 	// init wasm module
@@ -96,16 +125,17 @@ func (w *wasmTimeRuntime) Call(method string, gas int64, args ...interface{}) (r
 	startTime := time.Now()
 
 	defer func() {
-		w.logger.Debug("aspect execution done",
+		w.logger.Info("aspect execution done",
 			"duration", time.Since(startTime).String(),
 			"remainingGas", leftover,
+			"gasUsed", gas-leftover,
 			"err", err)
 	}()
 
 	w.Lock()
 	defer w.Unlock()
 
-	w.logger.Info("calling aspect", "method", method, "gas", gas, "args", args)
+	w.logger.Info("calling aspect", "method", method, "gas", gas)
 	w.logger.Debug("initializing aspect")
 	if err := w.init(gas); err != nil {
 		return nil, 0, errors.Errorf("aspect init failed, %v", err)
@@ -188,6 +218,8 @@ func (w *wasmTimeRuntime) call(method string, args ...interface{}) (interface{},
 
 		data := rtType.Marshal(arg)
 		ptr, err := w.ctx.AllocMemory(int32(len(data)))
+
+		w.logger.Debug("input data length", "index", i, "len", len(data), "type", typeIndex.String())
 		if err != nil {
 			return nil, err
 		}
@@ -278,14 +310,38 @@ func (w *wasmTimeRuntime) Destroy() {
 
 	w.logger.Debug("destroying wasm runtime")
 
+	w.clear()
+
+	if w.module != nil {
+		w.module.Close()
+	}
+	if w.engine != nil {
+		w.engine.Close()
+	}
+}
+
+func (w *wasmTimeRuntime) Reset() {
+	w.Lock()
+	defer w.Unlock()
+
+	w.logger.Debug("resetting wasm runtime")
+
+	w.clear()
+}
+
+func (w *wasmTimeRuntime) clear() {
 	w.apis = nil
 
 	// Deallocate resources associated with the instance, linker, and store.
 	// These components will be reconstructed before the next invocation.
-	w.linker.Close()
+	if w.linker != nil {
+		w.linker.Close()
+	}
 	w.linker = nil
 
-	w.ctx.Reset()
+	if w.ctx != nil {
+		w.ctx.Reset()
+	}
 	w.ctx = nil
 }
 
